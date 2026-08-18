@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap');
+
+body {
+  background: #0b0d10;
+  color: #eef0f2;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+
+.card { @apply bg-panel border border-border rounded-2xl; }
+.input {
+  @apply bg-[#14171b] border border-border text-[#eef0f2] rounded-lg px-3 py-2 w-full text-sm outline-none;
+}
+.input:focus { @apply border-accent; }
+.btn-primary { @apply bg-accent text-[#161207] font-semibold rounded-lg px-5 py-2.5 text-sm hover:opacity-90 transition; }
+.btn-secondary { @apply bg-transparent border border-border text-[#eef0f2] font-medium rounded-lg px-5 py-2.5 text-sm hover:border-accent transition; }
+.label { @apply text-[11px] tracking-wide text-muted font-semibold uppercase; }
+.toggle-btn { @apply bg-[#181b20] border border-border text-[#c7cbd1] rounded-lg px-3 py-2.5 text-sm font-semibold; }
+.toggle-btn.active { @apply bg-accent text-[#161207] border-accent; }

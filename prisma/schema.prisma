@@ -1,0 +1,258 @@
+// FoxPrep — database schema
+// Default provider is postgresql (for Vercel + Neon / Vercel Postgres / Supabase).
+// For local development without a hosted DB, switch provider to "sqlite" and
+// set DATABASE_URL="file:./dev.db" — then run `npx prisma migrate dev`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  STAFF // warehouse staff: can update inbound/outbound status, tracking, inventory counts — cannot see pricing config or customer balances
+  ADMIN // full access: pricing, wallet adjustments, everything STAFF can do
+}
+
+enum InboundStatus {
+  EXPECTED // customer created the shipment, hasn't arrived yet
+  RECEIVED // warehouse has counted and logged actual received quantities
+  DISCREPANCY // received quantities didn't match expected — flagged for review
+}
+
+enum OutboundStatus {
+  QUEUED
+  IN_PREP
+  READY_TO_SHIP
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+enum OutboundChannel {
+  AMAZON
+  MANUAL
+}
+
+enum RemovalStatus {
+  REQUESTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TxType {
+  TOPUP
+  CHARGE
+  REFUND
+  ADJUSTMENT
+  STORAGE_FEE
+}
+
+enum TicketStatus {
+  OPEN
+  PENDING
+  CLOSED
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  password        String
+  name            String
+  role            Role     @default(CUSTOMER)
+  amazonConnected Boolean  @default(false)
+  amazonSellerId  String?
+  createdAt       DateTime @default(now())
+
+  emailVerified        Boolean   @default(false)
+  verificationToken    String?   @unique
+  resetToken           String?   @unique
+  resetTokenExpiresAt  DateTime?
+
+  products          Product[]
+  inboundShipments  InboundShipment[]
+  outboundShipments OutboundShipment[]
+  inventoryItems    InventoryItem[]
+  removalRequests   RemovalRequest[]
+  tickets           Ticket[]
+  walletTx          WalletTransaction[]
+}
+
+// A SKU the customer sells. All inbound/inventory/outbound activity is
+// tracked per product, not just as a bare unit count — this is what lets us
+// answer "how much of X do I have in the warehouse right now."
+model Product {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  sku       String
+  title     String
+  photoUrl  String?
+  condition String   @default("New")
+  createdAt DateTime @default(now())
+
+  inboundItems  InboundShipmentItem[]
+  outboundItems OutboundShipmentItem[]
+  inventory     InventoryItem?
+  removals      RemovalRequest[]
+
+  @@unique([userId, sku])
+}
+
+// Customer tells us stock is coming. Expected quantities are set at creation;
+// warehouse staff fill in received quantities when it physically arrives —
+// these can differ (short shipments, damage), which is exactly the
+// discrepancy tracking the marketing site promises ("receive, inspect,
+// photograph, route").
+model InboundShipment {
+  id            String        @id @default(cuid())
+  shipmentNumber String       @unique
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  status        InboundStatus @default(EXPECTED)
+  notes         String?
+  receivedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items InboundShipmentItem[]
+}
+
+model InboundShipmentItem {
+  id              String          @id @default(cuid())
+  inboundId       String
+  inbound         InboundShipment @relation(fields: [inboundId], references: [id])
+  productId       String
+  product         Product         @relation(fields: [productId], references: [id])
+  expectedQty     Int
+  receivedQty     Int?
+}
+
+// Current stock sitting in the warehouse for a given product. Updated when
+// an inbound shipment is marked RECEIVED (increment) and when an outbound
+// shipment is marked SHIPPED (decrement). receivedAt tracks when the oldest
+// unbilled stock arrived, for the free-5-days storage calculation.
+model InventoryItem {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  productId     String   @unique // one inventory row per product — a product already belongs to exactly one user via Product.userId, so productId alone is enough
+  product       Product  @relation(fields: [productId], references: [id])
+  quantity      Int      @default(0)
+  receivedAt    DateTime @default(now())
+  lastBilledAt  DateTime? // last time storage fees were charged for this stock, so we don't double-bill the same period
+  updatedAt     DateTime @updatedAt
+}
+
+// A prep + ship job — this is what's actually billed. Tier is decided by the
+// customer's ROLLING 30-DAY unit volume (all outbound shipments in the last
+// 30 days, including this one), not by this single shipment's size — matching
+// how the published rate card works ("we look at what you actually shipped
+// last month and bill you at that tier").
+model OutboundShipment {
+  id              String          @id @default(cuid())
+  shipmentNumber  String          @unique
+  userId          String
+  user            User            @relation(fields: [userId], references: [id])
+  channel         OutboundChannel
+  status          OutboundStatus  @default(QUEUED)
+  polybagQty      Int             @default(0)
+  bundleQty       Int             @default(0)
+  insertQty       Int             @default(0)
+  tier            String // silver | platinum | diamond, snapshotted at creation
+  rateApplied     Float // per-unit rate snapshotted at creation, so later pricing changes don't retroactively alter past invoices
+  subtotal        Float
+  tax             Float
+  total           Float
+  trackingCarrier String?
+  trackingNumber  String?
+  warehouseNotes  String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  items    OutboundShipmentItem[]
+  walletTx WalletTransaction[]
+}
+
+model OutboundShipmentItem {
+  id         String           @id @default(cuid())
+  outboundId String
+  outbound   OutboundShipment @relation(fields: [outboundId], references: [id])
+  productId  String
+  product    Product          @relation(fields: [productId], references: [id])
+  quantity   Int
+}
+
+// Customer-initiated request to pull units back out of inventory (FBA
+// removal-style) instead of shipping them onward — promised on the
+// marketing site ("FBA Removal Orders & Returns") but was completely
+// missing from the first version of this system.
+model RemovalRequest {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  productId     String
+  product       Product       @relation(fields: [productId], references: [id])
+  quantity      Int
+  status        RemovalStatus @default(REQUESTED)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model WalletTransaction {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  type        TxType
+  amount      Float // positive = credit to wallet, negative = debit
+  description String
+  outboundId  String?
+  outbound    OutboundShipment? @relation(fields: [outboundId], references: [id])
+  createdAt   DateTime          @default(now())
+}
+
+model Ticket {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  subject   String
+  status    TicketStatus    @default(OPEN)
+  createdAt DateTime        @default(now())
+  messages  TicketMessage[]
+}
+
+model TicketMessage {
+  id         String   @id @default(cuid())
+  ticketId   String
+  ticket     Ticket   @relation(fields: [ticketId], references: [id])
+  senderRole Role
+  body       String
+  createdAt  DateTime @default(now())
+}
+
+// Single-row settings table the admin panel edits. Rates are one-time,
+// per-shipment charges keyed by rolling 30-day volume tier — NOT a monthly
+// subscription. storageRatePerBoxMonth is the only recurring charge, applied
+// by an explicit admin action (see /admin/billing), not automatically.
+//
+// Tax: the warehouse is in Ontario, so this is HST (13%), not Quebec's
+// GST+QST split. If you ever add a second warehouse in another province,
+// this single flat rate will need to become province-aware.
+model PricingSetting {
+  id                     String   @id @default("default")
+  silverRateUnit         Float    @default(0.95)
+  platinumRateUnit       Float    @default(0.78)
+  diamondRateUnit        Float    @default(0.62)
+  polyRate               Float    @default(0.60)
+  bundleRate             Float    @default(0.75)
+  insertRate             Float    @default(0.15)
+  storageRatePerBoxMonth Float    @default(5.00)
+  hstRate                Float    @default(0.13)
+  updatedAt              DateTime @updatedAt
+}
