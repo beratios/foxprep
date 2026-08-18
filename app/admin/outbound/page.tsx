@@ -10,7 +10,10 @@ export default function AdminOutboundPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold mb-6">Outbound shipments</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="font-display text-2xl font-bold">Outbound shipments</h1>
+        <Link href="/admin/outbound/new" className="btn-primary text-xs px-4 py-2">Create shipment</Link>
+      </div>
       <div className="card divide-y divide-border">
         {shipments.length === 0 && <div className="p-5 text-sm text-muted">No outbound shipments yet.</div>}
         {shipments.map((s) => (
