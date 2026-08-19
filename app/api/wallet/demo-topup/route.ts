@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 
-// DEV/DEMO ONLY — credits the wallet directly without a real payment, so the
-// order flow can be tested before Stripe is wired up. Disabled in production.
+// TEST-MODE ONLY — credits the wallet directly without a real payment, so
+// the shipment/payment flow can be tested before Stripe is wired up. Gated
+// on whether Stripe is configured (not on NODE_ENV) so it works on the live
+// Vercel deployment during setup, and automatically disables itself the
+// moment STRIPE_SECRET_KEY is added to the environment.
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Demo top-up is disabled in production." }, { status: 403 });
+  if (process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: "Stripe is configured — use real card top-up instead of demo top-up." }, { status: 403 });
   }
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

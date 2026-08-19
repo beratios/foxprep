@@ -157,7 +157,7 @@ Vercel's serverless functions don't have a persistent filesystem.
 3. Add a webhook endpoint pointing at `https://yourdomain.com/api/stripe/webhook`,
    listening for `checkout.session.completed`, and set `STRIPE_WEBHOOK_SECRET`.
 4. Test with Stripe's test card `4242 4242 4242 4242`.
-5. The "Demo top-up" button on the wallet page auto-disables in production.
+5. The "Demo top-up" button auto-disables the moment `STRIPE_SECRET_KEY` is set (works on Vercel too, until then).
 
 ## Turning on Amazon SP-API
 
