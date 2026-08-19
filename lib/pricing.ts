@@ -1,19 +1,26 @@
-// Shared pricing logic used by both the customer order form and the admin
-// preview. Rates are read from PricingSetting in the DB (editable by admin),
-// never hardcoded past this file's defaults, which only serve as a fallback
-// before the settings row is seeded.
+// Shared pricing logic used by the inbound-receiving payment step and the
+// admin preview. Rates are read from PricingSetting in the DB (editable by
+// admin), never hardcoded past this file's defaults, which only serve as a
+// fallback before the settings row is seeded.
 //
-// IMPORTANT — two things that are easy to get wrong and were wrong in the
-// first version of this file:
+// IMPORTANT — how billing actually works in this app:
 //
-// 1. Tier is decided by the customer's ROLLING 30-DAY unit volume across all
-//    their outbound shipments, INCLUDING the one being created — not by the
-//    size of a single shipment in isolation. A customer shipping 5×100 units
-//    across a month is a 500-unit account, not five separate 100-unit
-//    accounts. Always pass `rolling30DayUnits` (existing shipped units in
-//    the last 30 days, before this one) into quoteOutbound().
+// 1. Prep is billed when stock is RECEIVED (inbound), not when it's later
+//    shipped out. Right after staff counts the actual received quantity,
+//    the customer (or staff on their behalf) picks add-on services
+//    (poly-bagging, bundling, custom insert — labeling is mandatory and
+//    already baked into rateApplied) and pays before any prep work starts.
+//    Outbound shipments (sending stock to Amazon/customers) don't charge
+//    anything further — that stock was already paid for.
 //
-// 2. This is a one-time, per-shipment charge — NOT a monthly subscription.
+// 2. Tier is decided by the customer's ROLLING 30-DAY unit volume across all
+//    their PAID inbound shipments, INCLUDING the one being quoted — not by
+//    the size of a single shipment in isolation. A customer receiving 5×100
+//    units across a month is a 500-unit account, not five separate 100-unit
+//    accounts. Always pass `rolling30DayUnits` (prior paid-in units in the
+//    last 30 days, before this one) into quotePrepWork().
+//
+// 3. This is a one-time, per-shipment charge — NOT a monthly subscription.
 //    The only recurring monthly charge is storage past 5 days, applied
 //    explicitly via the admin billing action, never automatically here.
 //
@@ -45,14 +52,14 @@ export const DEFAULT_RATES: PricingRates = {
 export type Tier = "silver" | "platinum" | "diamond";
 
 // `totalUnits` is the rolling 30-day volume INCLUDING the shipment being
-// quoted — i.e. rolling30DayUnits (prior shipments) + unitsInThisShipment.
+// quoted — i.e. rolling30DayUnits (prior paid shipments) + unitsInThisShipment.
 export function tierForVolume(totalUnits: number): Tier {
   if (totalUnits >= 5000) return "diamond";
   if (totalUnits >= 1000) return "platinum";
   return "silver";
 }
 
-export type OutboundQuote = {
+export type PrepQuote = {
   tier: Tier;
   rate: number;
   base: number;
@@ -64,12 +71,12 @@ export type OutboundQuote = {
   total: number;
 };
 
-export function quoteOutbound(
+export function quotePrepWork(
   unitsInThisShipment: number,
   rolling30DayUnits: number,
   addons: { polybagQty?: number; bundleQty?: number; insertQty?: number },
   rates: PricingRates = DEFAULT_RATES
-): OutboundQuote {
+): PrepQuote {
   const totalUnits = rolling30DayUnits + unitsInThisShipment;
   const tier = tierForVolume(totalUnits);
   const rate = tier === "diamond" ? rates.diamondRateUnit : tier === "platinum" ? rates.platinumRateUnit : rates.silverRateUnit;

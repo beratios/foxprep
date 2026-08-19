@@ -13,35 +13,20 @@ export default function NewOutboundPage() {
   const [selected, setSelected] = useState("");
   const [selectedQty, setSelectedQty] = useState(1);
   const [channel, setChannel] = useState<"AMAZON" | "MANUAL">("AMAZON");
-  const [polybagQty, setPolybagQty] = useState(0);
-  const [bundleQty, setBundleQty] = useState(0);
-  const [insertQty, setInsertQty] = useState(0);
-
-  const [quote, setQuote] = useState<any>(null);
-  const [balance, setBalance] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/inventory").then((r) => r.json()).then((d) => setInventory(d.items ?? []));
-    fetch("/api/wallet").then((r) => r.json()).then((d) => setBalance(d.balance ?? 0));
   }, []);
 
   const totalUnits = useMemo(() => lines.reduce((s, l) => s + l.quantity, 0), [lines]);
 
-  useEffect(() => {
-    if (totalUnits === 0) { setQuote(null); return; }
-    fetch("/api/outbound/quote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ units: totalUnits, polybagQty, bundleQty, insertQty }),
-    }).then((r) => r.json()).then((d) => setQuote(d.quote));
-  }, [totalUnits, polybagQty, bundleQty, insertQty]);
-
   function addLine() {
     const inv = inventory.find((i) => i.product.id === selected);
     if (!inv) return;
-    if (selectedQty > inv.quantity - (lines.find((l) => l.productId === inv.product.id)?.quantity ?? 0)) {
+    const already = lines.find((l) => l.productId === inv.product.id)?.quantity ?? 0;
+    if (selectedQty + already > inv.quantity) {
       setError("Quantity exceeds what's available in inventory.");
       return;
     }
@@ -61,11 +46,7 @@ export default function NewOutboundPage() {
     const res = await fetch("/api/outbound", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        channel,
-        items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
-        polybagQty, bundleQty, insertQty,
-      }),
+      body: JSON.stringify({ channel, items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })) }),
     });
     const data = await res.json();
     setSubmitting(false);
@@ -73,15 +54,13 @@ export default function NewOutboundPage() {
     router.push(`/dashboard/outbound/${data.shipment.id}`);
   }
 
-  const insufficientFunds = quote && balance !== null && balance < quote.total;
-
   if (inventory.length === 0) {
     return (
       <div className="max-w-lg">
         <h1 className="font-display text-2xl font-bold mb-3">New outbound shipment</h1>
         <p className="text-muted text-sm">
           Nothing in inventory yet. <Link href="/dashboard/inbound/new" className="text-accent2">Send stock in</Link> first,
-          then come back here once it's received.
+          then pay the prep fee once it's received, and it'll show up here ready to ship.
         </p>
       </div>
     );
@@ -89,18 +68,17 @@ export default function NewOutboundPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="font-display text-2xl font-bold mb-6">New outbound shipment</h1>
+      <h1 className="font-display text-2xl font-bold mb-2">New outbound shipment</h1>
+      <p className="text-muted text-sm mb-6">
+        This stock was already paid for when it was received — this step just sends it on its way.
+      </p>
 
       <div className="card p-5 mb-4 space-y-4">
         <div>
           <label className="label mb-2 block">Ship to</label>
-          <div className="model-toggle flex gap-2">
-            <button onClick={() => setChannel("AMAZON")} className={`toggle-btn ${channel === "AMAZON" ? "active" : ""}`} style={{ flex: 1 }}>
-              Amazon FBA
-            </button>
-            <button onClick={() => setChannel("MANUAL")} className={`toggle-btn ${channel === "MANUAL" ? "active" : ""}`} style={{ flex: 1 }}>
-              FBM / customer direct
-            </button>
+          <div className="flex gap-2">
+            <button onClick={() => setChannel("AMAZON")} className={`toggle-btn ${channel === "AMAZON" ? "active" : ""}`} style={{ flex: 1 }}>Amazon FBA</button>
+            <button onClick={() => setChannel("MANUAL")} className={`toggle-btn ${channel === "MANUAL" ? "active" : ""}`} style={{ flex: 1 }}>FBM / customer direct</button>
           </div>
         </div>
 
@@ -126,57 +104,13 @@ export default function NewOutboundPage() {
             ))}
           </div>
         )}
-
-        <div>
-          <div className="label mb-2">ADD-ON SERVICES</div>
-          <div className="grid grid-cols-[1fr,80px] gap-2 items-center text-sm">
-            <span>Poly-bagging</span>
-            <input type="number" min={0} className="input" value={polybagQty} onChange={(e) => setPolybagQty(Math.max(0, +e.target.value))} />
-            <span>Bundling</span>
-            <input type="number" min={0} className="input" value={bundleQty} onChange={(e) => setBundleQty(Math.max(0, +e.target.value))} />
-            <span>Custom insert</span>
-            <input type="number" min={0} className="input" value={insertQty} onChange={(e) => setInsertQty(Math.max(0, +e.target.value))} />
-          </div>
-        </div>
       </div>
-
-      {quote && (
-        <div className="card p-5 mb-4 text-sm space-y-2">
-          <div className="label mb-1">{quote.tier.toUpperCase()} TIER — ${quote.rate.toFixed(2)}/unit</div>
-          <Row label="Prep" val={`$${quote.base.toFixed(2)}`} />
-          {quote.poly > 0 && <Row label="Poly-bagging" val={`$${quote.poly.toFixed(2)}`} />}
-          {quote.bundle > 0 && <Row label="Bundling" val={`$${quote.bundle.toFixed(2)}`} />}
-          {quote.insert > 0 && <Row label="Inserts" val={`$${quote.insert.toFixed(2)}`} />}
-          <Row label="Subtotal" val={`$${quote.subtotal.toFixed(2)}`} bold />
-          <Row label="HST (13%)" val={`$${quote.tax.toFixed(2)}`} />
-          <div className="border-t border-border pt-3 mt-1">
-            <div className="font-display text-2xl font-bold text-accent">${quote.total.toFixed(2)} CAD</div>
-            {balance !== null && (
-              <div className="text-xs text-muted mt-1">
-                Wallet: ${balance.toFixed(2)} {insufficientFunds && <span className="text-red-400">— insufficient, top up first</span>}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
 
-      {insufficientFunds ? (
-        <Link href="/dashboard/wallet" className="btn-primary block text-center">Top up wallet →</Link>
-      ) : (
-        <button onClick={submit} disabled={submitting || lines.length === 0} className="btn-primary w-full">
-          {submitting ? "Placing shipment…" : "Pay & confirm shipment"}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function Row({ label, val, bold }: { label: string; val: string; bold?: boolean }) {
-  return (
-    <div className={`flex justify-between ${bold ? "font-semibold" : "text-[#c7cbd1]"}`}>
-      <span>{label}</span><span>{val}</span>
+      <button onClick={submit} disabled={submitting || lines.length === 0} className="btn-primary w-full">
+        {submitting ? "Creating…" : `Ship ${totalUnits > 0 ? totalUnits + " units" : ""}`}
+      </button>
     </div>
   );
 }

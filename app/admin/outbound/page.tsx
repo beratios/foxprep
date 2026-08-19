@@ -25,7 +25,7 @@ export default function AdminOutboundPage() {
               </div>
             </div>
             <div className="text-right">
-              <div className="font-semibold">${s.total.toFixed(2)}</div>
+              <div className="font-semibold">{s.items.reduce((n: number, it: any) => n + it.quantity, 0)} units</div>
               <div className="text-xs text-muted">{s.status.replaceAll("_", " ")}</div>
             </div>
           </Link>

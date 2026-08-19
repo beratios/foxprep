@@ -25,19 +25,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data: { status, trackingCarrier, trackingNumber, warehouseNotes },
     });
 
-    // Cancelling a shipment refunds the wallet and puts the reserved units
-    // back into inventory — without this, cancelled shipments would silently
-    // keep the customer's money and stock in limbo.
+    // Cancelling a shipment puts the reserved units back into inventory —
+    // no wallet refund needed since outbound shipments aren't charged
+    // (the stock was already paid for at inbound-receiving time).
     if (isCancelling) {
-      await tx.walletTransaction.create({
-        data: {
-          userId: existing.userId,
-          type: "REFUND",
-          amount: existing.total,
-          description: `Refund for cancelled shipment ${existing.shipmentNumber}`,
-          outboundId: existing.id,
-        },
-      });
       for (const item of existing.items) {
         await tx.inventoryItem.upsert({
           where: { productId: item.productId },

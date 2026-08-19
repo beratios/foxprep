@@ -18,24 +18,24 @@ export default function OutboundDetailPage() {
       <style>{`
         @media print {
           body * { visibility: hidden; }
-          #invoice, #invoice * { visibility: visible; }
-          #invoice { position: absolute; top: 0; left: 0; width: 100%; color: #000; background: #fff; padding: 24px; }
+          #shipment-doc, #shipment-doc * { visibility: visible; }
+          #shipment-doc { position: absolute; top: 0; left: 0; width: 100%; color: #000; background: #fff; padding: 24px; }
         }
       `}</style>
 
       <div className="flex items-center justify-between mb-1 print:hidden">
         <h1 className="font-display text-2xl font-bold">{s.shipmentNumber}</h1>
         <div className="flex items-center gap-3">
-          <button onClick={() => window.print()} className="text-xs text-accent2">Print invoice</button>
+          <button onClick={() => window.print()} className="text-xs text-accent2">Print packing slip</button>
           <span className="text-xs px-3 py-1 rounded-full border border-border">{s.status.replaceAll("_", " ")}</span>
         </div>
       </div>
-      <p className="text-muted text-sm mb-6 print:hidden">{new Date(s.createdAt).toLocaleString()}</p>
+      <p className="text-muted text-sm mb-6 print:hidden">{new Date(s.createdAt).toLocaleString()} · {s.channel}</p>
 
-      <div id="invoice">
+      <div id="shipment-doc">
         <div className="mb-4">
           <div className="font-display font-bold text-lg">{COMPANY_NAME}</div>
-          <div className="text-xs text-muted">Invoice — {s.shipmentNumber}</div>
+          <div className="text-xs text-muted">Outbound shipment — {s.shipmentNumber}</div>
           <div className="text-xs text-muted">{new Date(s.createdAt).toLocaleString()}</div>
         </div>
 
@@ -51,17 +51,9 @@ export default function OutboundDetailPage() {
           ))}
         </div>
 
-        <div className="card p-5 text-sm space-y-2">
-          <div className="label mb-1">{s.tier.toUpperCase()} TIER — ${s.rateApplied.toFixed(2)}/unit</div>
-          {s.polybagQty > 0 && <Row label={`${s.polybagQty} × poly-bagging`} val="" />}
-          {s.bundleQty > 0 && <Row label={`${s.bundleQty} × bundling`} val="" />}
-          {s.insertQty > 0 && <Row label={`${s.insertQty} × custom insert`} val="" />}
-          <Row label="Subtotal" val={`$${s.subtotal.toFixed(2)}`} bold />
-          <Row label="HST (13%)" val={`$${s.tax.toFixed(2)}`} />
-          <div className="border-t border-border pt-3 mt-1 flex justify-between items-center">
-            <span className="font-display font-bold text-lg">Total</span>
-            <span className="font-display font-bold text-xl text-accent">${s.total.toFixed(2)} CAD</span>
-          </div>
+        <div className="card p-5 text-sm text-muted">
+          No charge for this shipment — prep was already paid when this stock was received. See your{" "}
+          <a href="/dashboard/inbound" className="text-accent2 print:hidden">inbound shipments</a> for that receipt.
         </div>
 
         {s.trackingNumber && (
@@ -71,14 +63,6 @@ export default function OutboundDetailPage() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function Row({ label, val, bold }: { label: string; val: string; bold?: boolean }) {
-  return (
-    <div className={`flex justify-between ${bold ? "font-semibold" : "text-[#c7cbd1]"}`}>
-      <span>{label}</span><span>{val}</span>
     </div>
   );
 }

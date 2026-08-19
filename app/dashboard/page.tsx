@@ -7,7 +7,7 @@ export default async function DashboardOverview() {
 
   const [agg, recentShipments, openTickets, inventoryCount] = await Promise.all([
     prisma.walletTransaction.aggregate({ where: { userId: user.id }, _sum: { amount: true } }),
-    prisma.outboundShipment.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 5 }),
+    prisma.outboundShipment.findMany({ where: { userId: user.id }, include: { items: true }, orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.ticket.count({ where: { userId: user.id, status: { not: "CLOSED" } } }),
     prisma.inventoryItem.count({ where: { userId: user.id, quantity: { gt: 0 } } }),
   ]);
@@ -54,10 +54,10 @@ export default async function DashboardOverview() {
           <Link key={s.id} href={`/dashboard/outbound/${s.id}`} className="flex items-center justify-between p-4 hover:bg-[#161a1f] text-sm">
             <div>
               <div className="font-semibold">{s.shipmentNumber}</div>
-              <div className="text-xs text-muted">{s.channel} · {s.tier} tier</div>
+              <div className="text-xs text-muted">{s.channel}</div>
             </div>
             <div className="text-right">
-              <div className="font-semibold">${s.total.toFixed(2)}</div>
+              <div className="font-semibold">{s.items?.reduce((n: number, it: any) => n + it.quantity, 0) ?? 0} units</div>
               <div className="text-xs text-muted">{s.status.replaceAll("_", " ")}</div>
             </div>
           </Link>

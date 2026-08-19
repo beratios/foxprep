@@ -41,7 +41,7 @@ export default function AdminOutboundDetail() {
   return (
     <div className="max-w-lg">
       <h1 className="font-display text-2xl font-bold mb-1">{s.shipmentNumber}</h1>
-      <p className="text-muted text-sm mb-6">{s.user.name} · {s.channel} · {s.tier} tier · ${s.total.toFixed(2)}</p>
+      <p className="text-muted text-sm mb-6">{s.user.name} · {s.channel} · {s.items.reduce((n: number, it: any) => n + it.quantity, 0)} units</p>
 
       <div className="card p-6 space-y-4">
         <div>

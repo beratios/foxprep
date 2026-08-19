@@ -6,41 +6,58 @@ outbound shipment tracking (not just a bare "order"), customer wallet, admin
 Amazon SP-API are wired in as clearly marked stubs — the app runs and is
 fully testable without either.
 
-## How stock actually flows through the system
+## How stock actually flows through the system — and where money moves
 
-This matters because it's the core of how the app is structured:
+This matters because it's the core of how the app is structured. **Billing
+happens at step 2 (right after receiving), not at step 4 (shipping out).**
 
 1. **Inbound** — customer tells us stock is coming (product + expected
    quantity, with a photo for new products). We give them the warehouse
    address to pass to their supplier.
 2. **Receiving** — warehouse staff count what actually arrived and enter it.
    If it doesn't match what was expected, the shipment is flagged
-   `DISCREPANCY` and the customer is emailed.
-3. **Inventory** — received stock sits here, tracked per SKU per customer,
-   until it's shipped out or removed.
-4. **Outbound** — customer creates a billed shipment: pick product(s) +
-   quantities from inventory, choose Amazon FBA or FBM/customer-direct,
-   add poly-bag/bundling/insert services. This is what's actually charged.
+   `DISCREPANCY`. Either way, the customer (or staff on their behalf) then
+   picks prep add-ons (poly-bagging, bundling, custom insert — labeling is
+   mandatory and already baked into the per-unit rate) and **pays before any
+   physical prep work starts**. This is the only place money changes hands
+   for prep — see `/api/inbound/[id]/pay`.
+3. **Inventory** — paid, prepped stock sits here, tracked per SKU per
+   customer, until it's shipped out or removed.
+4. **Outbound** — moves already-paid-for stock to Amazon FBA or direct to a
+   customer (FBM). **Not billed** — the customer already paid for this stock
+   when it was received. This step is just "pick product(s) + quantity,
+   choose channel, send it," plus later adding tracking info.
 5. **Removals** — customer can request stock pulled back out instead of
    shipped onward (mirrors Amazon's FBA removal orders).
 
-## Pricing — two things that are easy to get wrong
+Why pay-at-receiving instead of pay-at-shipping: charging before any labor
+happens means you never do prep work for free while chasing payment
+afterward. Charging at inbound (once the real received quantity is known,
+not just what the customer estimated when creating the inbound shipment) is
+also more accurate than charging at inbound-creation time, before anyone has
+actually counted the stock.
 
+## Pricing — three things that are easy to get wrong
+
+- **Billing happens at inbound-receiving, not at outbound-shipping.** See
+  `lib/pricing.ts` → `quotePrepWork()`, called from `/api/inbound/[id]/pay`.
+  Outbound shipment creation (`/api/outbound`, `/api/admin/outbound`) never
+  charges anything — it only moves inventory.
 - **Tier is rolling, not per-shipment.** Silver/Platinum/Diamond is decided
-  by the customer's total units shipped in the trailing 30 days, INCLUDING
-  the shipment being priced — not by how big a single shipment is. See
-  `lib/pricing.ts` → `quoteOutbound()`. A customer shipping 5×100 units
-  across a month is a 500-unit account, correctly priced at whatever tier
-  500 falls into — not five separate 100-unit Silver shipments.
-- **Prep/shipping is one-time, not monthly.** The only recurring charge is
-  storage past the free 5-day window, and it's never automatic — an admin
-  explicitly runs it from `/admin/billing`.
+  by the customer's total units *received and paid for* in the trailing 30
+  days, INCLUDING the inbound shipment being priced — not by how big a
+  single shipment is. A customer receiving 5×100 units across a month is a
+  500-unit account, correctly priced at whatever tier 500 falls into — not
+  five separate 100-unit Silver shipments.
+- **This is one-time, not monthly.** The only recurring charge is storage
+  past the free 5-day window, and it's never automatic — an admin explicitly
+  runs it from `/admin/billing`.
 - **Tax is HST (13%)**, because the warehouse is in Ontario — not Quebec's
   GST+QST split. If you ever add a second warehouse in another province,
   `hstRate` in `PricingSetting` will need to become province-aware.
-- Each shipment snapshots its own `tier` and `rateApplied` at creation time,
-  so changing rates in `/admin/pricing` never retroactively alters past
-  invoices.
+- Each inbound shipment snapshots its own `tier` and `rateApplied` at
+  payment time, so changing rates in `/admin/pricing` never retroactively
+  alters past invoices.
 
 ## Roles
 
@@ -60,13 +77,15 @@ Seeded accounts (change these passwords immediately):
 **Real and working today:**
 - Register / login / forgot-password / reset-password / email verification
   (JWT session cookie, bcrypt hashing)
-- Customer dashboard: send stock in (with new-product photo capture),
-  view inventory, create outbound shipments (live price preview using real
-  rolling-volume tier), print invoices, request removals, wallet + top-up,
-  support tickets
+- Customer dashboard: send stock in (with new-product photo capture), pay
+  the prep fee once it's received (live quote using real rolling-volume
+  tier), view inventory, create free outbound shipments to Amazon/FBM,
+  request removals, wallet + top-up, support tickets
 - Admin/staff panel: receive inbound shipments (enter actual counts,
-  auto-flags discrepancies), manage outbound status/tracking (cancelling
-  auto-refunds + restocks), view all inventory, process removal requests,
+  auto-flags discrepancies), charge the prep fee on a customer's behalf,
+  create/manage outbound shipments and tracking (cancelling restocks
+  inventory), view all inventory with source-shipment traceability, process
+  removal requests,
   reply to tickets, run monthly storage billing
 - Admin-only: edit pricing, view/adjust customer wallet balances
 - Email notifications fire at every state change (inbound received, low

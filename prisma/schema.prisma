@@ -110,17 +110,33 @@ model Product {
 // discrepancy tracking the marketing site promises ("receive, inspect,
 // photograph, route").
 model InboundShipment {
-  id            String        @id @default(cuid())
-  shipmentNumber String       @unique
-  userId        String
-  user          User          @relation(fields: [userId], references: [id])
-  status        InboundStatus @default(EXPECTED)
-  notes         String?
-  receivedAt    DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  shipmentNumber String        @unique
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  status         InboundStatus @default(EXPECTED)
+  notes          String?
+  receivedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  items InboundShipmentItem[]
+  // Prep is priced and paid here, right after we count the stock in — NOT
+  // when it's later shipped out. Labeling is mandatory and baked into
+  // rateApplied; these three are the optional add-ons the customer picks.
+  // paidAt is null until payment clears; nothing should move to an outbound
+  // shipment before that.
+  polybagQty  Int       @default(0)
+  bundleQty   Int       @default(0)
+  insertQty   Int       @default(0)
+  tier        String?
+  rateApplied Float?
+  subtotal    Float?
+  tax         Float?
+  total       Float?
+  paidAt      DateTime?
+
+  items    InboundShipmentItem[]
+  walletTx WalletTransaction[]
 }
 
 model InboundShipmentItem {
@@ -149,11 +165,12 @@ model InventoryItem {
   updatedAt     DateTime @updatedAt
 }
 
-// A prep + ship job — this is what's actually billed. Tier is decided by the
-// customer's ROLLING 30-DAY unit volume (all outbound shipments in the last
-// 30 days, including this one), not by this single shipment's size — matching
-// how the published rate card works ("we look at what you actually shipped
-// last month and bill you at that tier").
+// Moves already-paid-for prepped stock out the door (to Amazon FBA or
+// direct to a customer/FBM). NOT billed anymore — the customer already paid
+// the prep fee when the stock was received (see InboundShipment). The
+// pricing fields below are kept for schema stability but are always 0 for
+// shipments created after this change; carrier shipping/freight is real
+// cost but tracked outside this app (billed separately, per the site copy).
 model OutboundShipment {
   id              String          @id @default(cuid())
   shipmentNumber  String          @unique
@@ -161,14 +178,17 @@ model OutboundShipment {
   user            User            @relation(fields: [userId], references: [id])
   channel         OutboundChannel
   status          OutboundStatus  @default(QUEUED)
+  // Legacy pricing snapshot fields — always null/0 for shipments created
+  // after billing moved to inbound-receiving time. Kept optional rather than
+  // removed to avoid a destructive migration; safe to drop entirely later.
   polybagQty      Int             @default(0)
   bundleQty       Int             @default(0)
   insertQty       Int             @default(0)
-  tier            String // silver | platinum | diamond, snapshotted at creation
-  rateApplied     Float // per-unit rate snapshotted at creation, so later pricing changes don't retroactively alter past invoices
-  subtotal        Float
-  tax             Float
-  total           Float
+  tier            String?
+  rateApplied     Float?
+  subtotal        Float           @default(0)
+  tax             Float           @default(0)
+  total           Float           @default(0)
   trackingCarrier String?
   trackingNumber  String?
   warehouseNotes  String?
@@ -212,7 +232,9 @@ model WalletTransaction {
   type        TxType
   amount      Float // positive = credit to wallet, negative = debit
   description String
-  outboundId  String?
+  inboundId   String? // set for prep-fee charges — this is where the money actually moves now
+  inbound     InboundShipment?  @relation(fields: [inboundId], references: [id])
+  outboundId  String? // kept for CANCELLED-outbound refunds; new outbound shipments don't charge anything
   outbound    OutboundShipment? @relation(fields: [outboundId], references: [id])
   createdAt   DateTime          @default(now())
 }
