@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/current-user";
+import PriceEstimator from "@/components/PriceEstimator";
 
 export default async function DashboardOverview() {
   const user = await requireUser();
@@ -39,6 +40,10 @@ export default async function DashboardOverview() {
           <div className="font-display text-2xl font-bold">{openTickets}</div>
           <Link href="/dashboard/tickets" className="text-xs text-accent2 mt-2 inline-block">View →</Link>
         </div>
+      </div>
+
+      <div className="mb-10">
+        <PriceEstimator />
       </div>
 
       <div className="flex items-center justify-between mb-4">
