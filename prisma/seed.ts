@@ -1,39 +1,19 @@
-import { PrismaClient, Role } from "@prisma/client";
+import "dotenv/config";
 import bcrypt from "bcryptjs";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../src/generated/prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
 
 async function main() {
-  await prisma.pricingSetting.upsert({
-    where: { id: "default" },
+  const email = (process.env.ADMIN_EMAIL || "admin@foxprepcenter.com").toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || "change-me-now";
+  await prisma.user.upsert({
+    where: { email },
     update: {},
-    create: { id: "default" },
+    create: { email, name: "FoxPrep Admin", role: "ADMIN", customerCode: "FX-0000", passwordHash: await bcrypt.hash(password, 10) },
   });
-
-  const adminEmail = "admin@foxprep.ca";
-  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
-  if (!existingAdmin) {
-    const password = await bcrypt.hash("changeme123", 10);
-    await prisma.user.create({
-      data: { email: adminEmail, password, name: "FoxPrep Admin", role: Role.ADMIN, emailVerified: true },
-    });
-    console.log(`Seeded admin: ${adminEmail} / changeme123 — change this password after first login.`);
-  }
-
-  const staffEmail = "warehouse@foxprep.ca";
-  const existingStaff = await prisma.user.findUnique({ where: { email: staffEmail } });
-  if (!existingStaff) {
-    const password = await bcrypt.hash("changeme123", 10);
-    await prisma.user.create({
-      data: { email: staffEmail, password, name: "Warehouse Staff", role: Role.STAFF, emailVerified: true },
-    });
-    console.log(`Seeded staff: ${staffEmail} / changeme123 — change this password after first login.`);
-  }
+  console.log(`Admin ready: ${email}`);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+main().finally(() => prisma.$disconnect());
