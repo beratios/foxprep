@@ -99,6 +99,7 @@ export default async function OrderPage({ params, searchParams }: { params: { id
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold">{i.title}</div>
                       <div className="tnum text-[12.5px] text-ink-soft">{[i.sku && `SKU ${i.sku}`, i.fnsku && `FNSKU ${i.fnsku}`, i.asin && `ASIN ${i.asin}`].filter(Boolean).join(", ")}</div>
+                      {i.url && <a href={i.url} target="_blank" rel="noopener noreferrer" className="block truncate text-[12.5px] underline">{i.url}</a>}
                     </div>
                     <div className="tnum text-right text-sm">
                       <div className="font-semibold">{i.quantity.toLocaleString()} expected</div>

@@ -110,6 +110,8 @@ model OrderItem {
   sku       String?
   asin      String?
   fnsku     String?
+  /// Optional link to the listing or product page
+  url       String?
   quantity  Int
   receivedQty Int?
 }

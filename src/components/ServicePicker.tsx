@@ -39,6 +39,12 @@ export function ServicePicker({
       {groups.map(({ g, items }) => (
         <fieldset key={g}>
           <legend className="mb-2 text-[15px] font-bold text-ink">{GROUP_LABELS[g]}</legend>
+          {(g === "cartons" || g === "pallets") && (
+            <p className="mb-3 rounded-md bg-fox-tint/60 px-3 py-2 text-[13px] leading-snug text-ink-2">
+              Not sure how many {g === "cartons" ? "cartons" : "pallets"}? Leave these blank. We count everything when it arrives and when it leaves, send you photos,
+              and charge the exact amount from your balance before anything ships out.
+            </p>
+          )}
           <ul className="divide-y divide-line rounded-lg border border-line bg-white">
             {items.map((s) => {
               const required = s.requiredFor?.includes(channel);

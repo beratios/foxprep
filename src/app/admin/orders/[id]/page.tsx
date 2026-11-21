@@ -35,6 +35,23 @@ export default async function AdminOrder({ params }: { params: { id: string } })
               ))}
             </ul>
           </section>
+          {o.items.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-lg font-bold">Products</h2>
+              <ul className="panel divide-y divide-line">
+                {o.items.map((i) => (
+                  <li key={i.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-[14.5px]">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold">{i.title}</div>
+                      <div className="tnum text-[12.5px] text-ink-soft">{[i.sku && `SKU ${i.sku}`, i.fnsku && `FNSKU ${i.fnsku}`].filter(Boolean).join(", ") || "No SKU"}</div>
+                      {i.url && <a href={i.url} target="_blank" rel="noopener noreferrer" className="block truncate text-[12.5px] underline">{i.url}</a>}
+                    </div>
+                    <span className="tnum font-semibold">{i.quantity.toLocaleString()} units</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {o.customerNotes && (
             <section>
               <h2 className="mb-2 text-lg font-bold">Customer instructions</h2>

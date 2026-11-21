@@ -11,7 +11,7 @@ const Body = z.object({
   units: z.number().int().min(1).max(100000),
   services: z.record(z.number().int().min(0).max(1000000)),
   items: z
-    .array(z.object({ productId: z.string().optional(), title: z.string().trim().min(1), sku: z.string().optional(), asin: z.string().optional(), fnsku: z.string().optional(), quantity: z.number().int().min(1) }))
+    .array(z.object({ productId: z.string().optional(), title: z.string().trim().min(1), sku: z.string().optional(), asin: z.string().optional(), fnsku: z.string().optional(), url: z.string().trim().max(500).regex(/^https?:\/\//i).optional(), quantity: z.number().int().min(1) }))
     .min(1)
     .max(200),
   supplierName: z.string().trim().min(1).max(200),
@@ -64,6 +64,7 @@ export async function POST(req: Request) {
           sku: i.sku || null,
           asin: i.asin || null,
           fnsku: i.fnsku || null,
+          url: i.url || null,
           quantity: i.quantity,
         })),
       },
