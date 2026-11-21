@@ -48,6 +48,10 @@ const FAQ = [
     a: `Yes, up to ${MAX_PALLETS_PER_ORDER} standard 48×40 pallets per order, up to 1,000 kg each. For more, message us first so we can make room. Book the freight with liftgate delivery, because we don't have a loading dock. We don't unload full containers; send those to a cross-dock and have pallets delivered from there.`,
   },
   {
+    q: "Who pays for FBM shipping?",
+    a: "You buy the shipping label yourself, through Amazon Buy Shipping, Shopify, Chit Chats, Stallion or Canada Post, and upload it to the order. Our FBM fee covers picking, packing and attaching the label, so you pay postage at your own rates with no markup from us.",
+  },
+  {
     q: "Is there a monthly fee or minimum?",
     a: `No monthly fee and no minimum order. Storage is free for the first ${FREE_STORAGE_DAYS} days after an order is received.`,
   },

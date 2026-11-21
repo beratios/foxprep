@@ -45,7 +45,9 @@ export type ServiceCode =
   | "pallet_out"
   | "pallet_supply"
   | "fbm_pick"
-  | "fbm_extra";
+  | "fbm_extra"
+  | "fbm_mailer"
+  | "fbm_box";
 
 export interface Service {
   code: ServiceCode;
@@ -93,8 +95,10 @@ export const SERVICES: readonly Service[] = [
   { code: "pallet_in", name: "Pallet receiving", detail: "Check and break down an inbound pallet. Liftgate delivery required", basis: "pallet", rate: 1500, channels: ["FBA", "WFS", "FBM"], group: "pallets" },
   { code: "pallet_out", name: "Pallet build", detail: "Stack, stretch-wrap and label to Amazon pallet rules", basis: "pallet", rate: 2000, channels: ["FBA", "WFS"], group: "pallets" },
   { code: "pallet_supply", name: "Pallet supply", detail: "Heat-treated 48×40 pallet", basis: "pallet", rate: 1200, channels: ["FBA", "WFS"], group: "pallets" },
-  { code: "fbm_pick", name: "FBM order", detail: "Pick, pack and label one order, first item", basis: "order", rate: [175, 150, 125], channels: ["FBM"], group: "fbm" },
-  { code: "fbm_extra", name: "Extra item in order", detail: "Each additional item in the same FBM order", basis: "unit", rate: 40, channels: ["FBM"], group: "fbm" },
+  { code: "fbm_pick", name: "FBM order", detail: "Pick, pack and attach your shipping label, first item. Postage not included", basis: "order", rate: [300, 275, 250], channels: ["FBM"], group: "fbm" },
+  { code: "fbm_extra", name: "Extra item in order", detail: "Each additional item in the same FBM order", basis: "unit", rate: 50, channels: ["FBM"], group: "fbm" },
+  { code: "fbm_mailer", name: "Poly mailer", detail: "Padded or plain poly mailer for soft items", basis: "order", rate: 35, channels: ["FBM"], group: "fbm" },
+  { code: "fbm_box", name: "Shipping box", detail: "Corrugated box with void fill for fragile or heavy items", basis: "order", rate: 125, channels: ["FBM"], group: "fbm" },
 ] as const;
 
 export const SERVICE_BY_CODE = Object.fromEntries(SERVICES.map((s) => [s.code, s])) as Record<ServiceCode, Service>;
