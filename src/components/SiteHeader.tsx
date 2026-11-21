@@ -9,7 +9,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
         <nav className="hidden items-center gap-7 text-[15px] font-medium text-ink-2 md:flex">
           <a href="#how" className="hover:text-fox">How it works</a>
           <a href="#rates" className="hover:text-fox">Rates</a>
-          <a href="#calculator" className="hover:text-fox">Price a shipment</a>
+          <a href="#quote" className="hover:text-fox">Price a shipment</a>
           <a href="#faq" className="hover:text-fox">FAQ</a>
         </nav>
         <div className="flex items-center gap-2">

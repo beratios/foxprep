@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
-import { QuickQuote } from "@/components/QuickQuote";
-import { Calculator } from "@/components/Calculator";
+import { HeroQuote } from "@/components/HeroQuote";
 import { Logo } from "@/components/Logo";
 import { WhatsAppButton, WhatsAppLink, WhatsAppIcon } from "@/components/WhatsApp";
 import { getSession } from "@/lib/auth";
@@ -80,8 +79,8 @@ export default async function Home() {
       <SiteHeader signedIn={!!session} />
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden border-b border-line">
-          <div className="mx-auto grid max-w-page items-center gap-12 px-5 pb-16 pt-12 md:grid-cols-[1.1fr_1fr] md:pb-24 md:pt-20">
+        <section className="relative border-b border-line">
+          <HeroQuote signedIn={!!session}>
             <div>
               <p className="mb-5 inline-flex items-center gap-2 rounded-full bg-ink px-3 py-1 text-[13px] font-semibold text-white">
                 <span className="h-2 w-2 rounded-full bg-fox" aria-hidden /> Amazon FBA, Walmart WFS and FBM prep in Hamilton, Ontario
@@ -107,8 +106,7 @@ export default async function Home() {
                 </div>
               </dl>
             </div>
-            <QuickQuote />
-          </div>
+          </HeroQuote>
         </section>
 
         {/* Context */}
@@ -257,19 +255,6 @@ export default async function Home() {
             <p className="mt-8 text-[14px] text-ink-soft">
               Photos of every inbound shipment and a basic count and damage check are always free. Work outside this list, like repacking damaged supplier cartons, is billed at $35 an hour, and we ask before we start.
             </p>
-          </div>
-        </section>
-
-        {/* Calculator */}
-        <section id="calculator" className="scroll-mt-20 border-b border-line">
-          <div className="mx-auto max-w-page px-5 py-20">
-            <div className="mb-10 max-w-2xl">
-              <h2 className="wide text-[34px] font-black leading-tight tracking-tight md:text-[44px]">Price your shipment</h2>
-              <p className="mt-3 text-[17px] leading-relaxed text-ink-2">
-                This is the same cart you use in your dashboard. What you see here is what you pay.
-              </p>
-            </div>
-            <Calculator signedIn={!!session} />
           </div>
         </section>
 

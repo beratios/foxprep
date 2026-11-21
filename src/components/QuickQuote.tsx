@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Barcode } from "./Barcode";
-import { CHANNEL_LABEL, money, quote, type Channel, type ServiceCode } from "@/lib/pricing";
-import { encodeCart } from "@/lib/cartParams";
+import { followUnits, type ServiceValues } from "./ServicePicker";
+import { CHANNEL_LABEL, money, type Channel, type Quote, type ServiceCode } from "@/lib/pricing";
 
 const EXTRAS: { code: ServiceCode; name: string }[] = [
   { code: "polybag", name: "Poly bag" },
@@ -12,14 +11,28 @@ const EXTRAS: { code: ServiceCode; name: string }[] = [
   { code: "bundle", name: "Bundle" },
 ];
 
-/** The hero: a 4×6 thermal label that prices a shipment as you change it. */
-export function QuickQuote() {
-  const [channel, setChannel] = useState<Channel>("FBA");
-  const [units, setUnits] = useState(500);
-  const [extras, setExtras] = useState<ServiceCode[]>(["polybag"]);
+export interface QuoteState {
+  channel: Channel;
+  setChannel: (c: Channel) => void;
+  units: number;
+  setUnits: (n: number) => void;
+  services: ServiceValues;
+  setServices: (v: ServiceValues) => void;
+  q: Quote;
+  startHref: string;
+  open: boolean;
+  onToggle: () => void;
+}
 
-  const services = useMemo(() => Object.fromEntries(extras.map((c) => [c, units])), [extras, units]);
-  const q = useMemo(() => quote({ channel, units, services }), [channel, units, services]);
+/** The hero: a 4×6 thermal label that prices a shipment as you change it. */
+export function QuickQuote({ channel, setChannel, units, setUnits: rawSetUnits, services, setServices, q, startHref, open, onToggle }: QuoteState) {
+  const setUnits = (fn: number | ((u: number) => number)) => {
+    const next = typeof fn === "function" ? fn(units) : fn;
+    setServices(followUnits(services, units, next));
+    rawSetUnits(next);
+  };
+  const extras = EXTRAS.map((e) => e.code).filter((c) => (services[c] ?? 0) > 0);
+  const added = Object.keys(services).filter((c) => (services[c as ServiceCode] ?? 0) > 0 && !EXTRAS.some((e) => e.code === c)).length;
   const ref = `IN-${(units * 7 + extras.length * 131 + channel.length).toString(36).toUpperCase().padStart(6, "Q")}`;
 
   return (
@@ -80,7 +93,12 @@ export function QuickQuote() {
                 <button
                   key={e.code}
                   aria-pressed={on}
-                  onClick={() => setExtras((x) => (on ? x.filter((c) => c !== e.code) : [...x, e.code]))}
+                  onClick={() => {
+                    const next = { ...services };
+                    if (on) delete next[e.code];
+                    else next[e.code] = units;
+                    setServices(next);
+                  }}
                   className={`rounded-full border-2 border-black px-3 py-1 text-[12px] font-bold ${on ? "bg-[#E8590C] text-white" : "bg-white"}`}
                 >
                   {on ? "✓ " : "+ "}{e.name}
@@ -116,12 +134,20 @@ export function QuickQuote() {
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-        <Link href={`/register?next=${encodeURIComponent(`/dashboard/orders/new?${encodeCart(channel, units, services)}`)}`} className="btn-fox">
+        <Link href={startHref} className="btn-fox">
           Start this order
         </Link>
-        <a href="#calculator" className="text-[15px] font-semibold text-ink underline decoration-fox decoration-2 underline-offset-4 hover:text-fox">
-          Add more services
-        </a>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-controls="all-services"
+          className="btn-ghost"
+        >
+          {open ? "Hide services" : "All services and breakdown"}
+          {added > 0 && !open && <span className="tnum rounded-full bg-fox px-2 py-0.5 text-xs text-white">+{added}</span>}
+          <span aria-hidden className={`transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
+        </button>
       </div>
     </div>
   );
