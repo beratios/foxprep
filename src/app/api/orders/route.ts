@@ -12,8 +12,9 @@ const Body = z.object({
   services: z.record(z.number().int().min(0).max(1000000)),
   items: z
     .array(z.object({ productId: z.string().optional(), title: z.string().trim().min(1), sku: z.string().optional(), asin: z.string().optional(), fnsku: z.string().optional(), quantity: z.number().int().min(1) }))
+    .min(1)
     .max(200),
-  supplierName: z.string().trim().max(200).optional(),
+  supplierName: z.string().trim().min(1).max(200),
   inboundTracking: z.string().trim().max(500).optional(),
   customerNotes: z.string().trim().max(2000).optional(),
   payment: z.enum(["WALLET", "STRIPE"]),
@@ -23,8 +24,8 @@ export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Log in to place an order." }, { status: 401 });
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
-  if (!parsed.success) return NextResponse.json({ error: "Check the order details and try again." }, { status: 400 });
-  const b = parsed.data;
+  if (!parsed.success) return NextResponse.json({ error: "Add at least one product and the supplier name, then try again." }, { status: 400 });
+  const b = { ...parsed.data, units: parsed.data.items.reduce((a, i) => a + i.quantity, 0) }; // units always come from the product list
 
   const services = Object.fromEntries(Object.entries(b.services).filter(([c]) => c in SERVICE_BY_CODE)) as Partial<Record<ServiceCode, number>>;
   if ((services.pallet_in ?? 0) > MAX_PALLETS_PER_ORDER)

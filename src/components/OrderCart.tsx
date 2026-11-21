@@ -1,12 +1,11 @@
 "use client";
 
 import { WhatsAppLink } from "./WhatsApp";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChannelUnits } from "./Calculator";
 import { ServicePicker, followUnits, type ServiceValues } from "./ServicePicker";
 import { QuoteSummary } from "./QuoteSummary";
-import { MAX_PALLETS_PER_ORDER, money, quote, type Channel } from "@/lib/pricing";
+import { CHANNEL_LABEL, MAX_PALLETS_PER_ORDER, money, quote, type Channel } from "@/lib/pricing";
 
 interface P { id: string; title: string; sku: string; asin: string | null; fnsku: string | null; provider: string | null }
 interface Item { key: string; productId?: string; title: string; sku?: string; asin?: string; fnsku?: string; quantity: number }
@@ -23,11 +22,11 @@ export function OrderCart({
   cardEnabled: boolean;
 }) {
   const [channel, setChannel] = useState<Channel>(initial.channel);
-  const [manualUnits, setManualUnits] = useState(initial.units);
+
   const [services, setServices] = useState<ServiceValues>(initial.services);
   const [items, setItems] = useState<Item[]>([]);
   const [pick, setPick] = useState("");
-  const [draft, setDraft] = useState({ title: "", sku: "", quantity: "" });
+  const [draft, setDraft] = useState({ title: "", sku: "", fnsku: "", quantity: String(initial.units || "") });
   const [supplierName, setSupplier] = useState("");
   const [inboundTracking, setTracking] = useState("");
   const [customerNotes, setNotes] = useState("");
@@ -36,30 +35,45 @@ export function OrderCart({
   const [error, setError] = useState<string | null>(null);
 
   const itemUnits = items.reduce((a, i) => a + i.quantity, 0);
-  const units = items.length ? itemUnits : manualUnits;
+  // A product typed into the form but not yet added still counts, so nobody loses it by skipping "Add product"
+  const draftQty = parseInt(draft.quantity, 10) || 0;
+  const draftReady = Boolean(draft.title.trim() && draftQty > 0);
+  const units = itemUnits + (draftReady ? draftQty : 0) || initial.units;
+
+  // Per-unit services that covered every unit keep covering every unit when the count changes
+  const prevUnits = useRef(units);
+  useEffect(() => {
+    if (prevUnits.current !== units) setServices((v) => followUnits(v, prevUnits.current, units));
+    prevUnits.current = units;
+  }, [units]);
+
   const q = useMemo(() => quote({ channel, units, services }), [channel, units, services]);
   const short = payment === "WALLET" && balanceCents < q.totalCents;
   const tooManyPallets = (services.pallet_in ?? 0) > MAX_PALLETS_PER_ORDER;
 
-  function changeUnits(next: number) {
-    setServices((v) => followUnits(v, units, next));
-  }
+  const fbaLike = channel !== "FBM";
+  const missing = [
+    !items.length && !draftReady && "Add at least one product with its name and unit count.",
+    !supplierName.trim() && "Enter who is sending the shipment.",
+  ].filter(Boolean) as string[];
+
   function updateItems(next: Item[]) {
-    const n = next.reduce((a, i) => a + i.quantity, 0) || manualUnits;
-    changeUnits(n);
     setItems(next);
   }
   function addProduct(id: string) {
     const p = products.find((x) => x.id === id);
     if (!p || items.some((i) => i.productId === id)) return;
-    updateItems([...items, { key: id, productId: id, title: p.title, sku: p.sku, asin: p.asin ?? undefined, fnsku: p.fnsku ?? undefined, quantity: 100 }]);
+    updateItems([...items, { key: id, productId: id, title: p.title, sku: p.sku, asin: p.asin ?? undefined, fnsku: p.fnsku ?? undefined, quantity: draftQty && !draft.title.trim() ? draftQty : 100 }]);
+    if (!draft.title.trim()) setDraft({ ...draft, quantity: "" });
     setPick("");
   }
+  function draftItem(): Item {
+    return { key: crypto.randomUUID(), title: draft.title.trim(), sku: draft.sku.trim() || undefined, fnsku: draft.fnsku.trim() || undefined, quantity: draftQty };
+  }
   function addManual() {
-    const qty = parseInt(draft.quantity, 10);
-    if (!draft.title.trim() || !qty) return;
-    updateItems([...items, { key: crypto.randomUUID(), title: draft.title.trim(), sku: draft.sku.trim() || undefined, quantity: qty }]);
-    setDraft({ title: "", sku: "", quantity: "" });
+    if (!draftReady) return;
+    updateItems([...items, draftItem()]);
+    setDraft({ title: "", sku: "", fnsku: "", quantity: "" });
   }
 
   async function submit() {
@@ -72,7 +86,7 @@ export function OrderCart({
         channel,
         units,
         services: Object.fromEntries(Object.entries(services).filter(([, v]) => v && v > 0)),
-        items: items.map(({ key: _k, ...i }) => i),
+        items: [...items, ...(draftReady ? [draftItem()] : [])].map(({ key: _k, ...i }) => i),
         supplierName,
         inboundTracking,
         customerNotes,
@@ -90,22 +104,30 @@ export function OrderCart({
     <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
       <div className="space-y-10">
         <section>
-          <h2 className="mb-4 text-lg font-bold">Destination and size</h2>
-          <ChannelUnits
-            channel={channel}
-            units={units}
-            setChannel={setChannel}
-            setUnits={(n) => {
-              changeUnits(n);
-              setManualUnits(n);
-            }}
-          />
-          {items.length > 0 && <p className="mt-2 text-[13px] text-ink-soft">Total units follow the products below.</p>}
+          <fieldset>
+            <legend className="mb-4 text-lg font-bold">Where is this inventory going?</legend>
+            <div className="grid grid-cols-3 gap-2">
+              {(["FBA", "WFS", "FBM"] as Channel[]).map((c) => (
+                <label
+                  key={c}
+                  className={`cursor-pointer rounded-md border-2 px-3 py-2.5 text-center text-sm font-semibold transition-colors ${
+                    channel === c ? "border-ink bg-ink text-white" : "border-line bg-white hover:border-ink/40"
+                  }`}
+                >
+                  <input type="radio" name="channel" value={c} checked={channel === c} onChange={() => setChannel(c)} className="sr-only" />
+                  {CHANNEL_LABEL[c]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </section>
 
         <section>
-          <h2 className="text-lg font-bold">Products in this shipment</h2>
-          <p className="mb-4 mt-1 text-[14px] text-ink-soft">Optional, but it lets us check counts per SKU and use the right FNSKU.</p>
+          <h2 className="text-lg font-bold">Products in this shipment <span className="text-fox-dark">*</span></h2>
+          <p className="mb-4 mt-1 text-[14px] text-ink-soft">
+            List every product your supplier is sending and how many. We count against this when the cartons arrive.
+            {fbaLike && " Add the FNSKU if you have it, so we print the right label."}
+          </p>
           {products.length > 0 && (
             <div className="mb-3 flex gap-2">
               <label htmlFor="pick" className="sr-only">Add from your products</label>
@@ -143,12 +165,14 @@ export function OrderCart({
               ))}
             </ul>
           )}
-          <div className="grid gap-2 rounded-lg border border-dashed border-line p-3 sm:grid-cols-[1fr_140px_110px_auto]">
-            <input className="field" placeholder="Product name" aria-label="Product name" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+          <div className={`grid gap-2 rounded-lg border border-dashed border-line p-3 ${fbaLike ? "sm:grid-cols-[1fr_120px_130px_90px_auto]" : "sm:grid-cols-[1fr_140px_100px_auto]"}`}>
+            <input className="field" placeholder="Product name *" aria-label="Product name" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
             <input className="field" placeholder="SKU" aria-label="SKU" value={draft.sku} onChange={(e) => setDraft({ ...draft, sku: e.target.value })} />
-            <input className="field tnum" placeholder="Units" aria-label="Units" inputMode="numeric" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value.replace(/\D/g, "") })} />
-            <button className="btn-ghost btn-sm" onClick={addManual} disabled={!draft.title.trim() || !draft.quantity}>Add product</button>
+            {fbaLike && <input className="field" placeholder="FNSKU (X00…)" aria-label="FNSKU" value={draft.fnsku} onChange={(e) => setDraft({ ...draft, fnsku: e.target.value.toUpperCase() })} />}
+            <input className="field tnum" placeholder="Units *" aria-label="Units" inputMode="numeric" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value.replace(/\D/g, "") })} />
+            <button className="btn-ghost btn-sm" onClick={addManual} disabled={!draftReady}>Add product</button>
           </div>
+          <p className="tnum mt-2 text-[13px] text-ink-soft">Total: {(itemUnits + (draftReady ? draftQty : 0)).toLocaleString()} units</p>
           {products.length === 0 && (
             <p className="mt-2 text-[13px] text-ink-soft"><Link href="/dashboard/stores" className="font-semibold text-ink underline">Connect your Amazon or Walmart store</Link> to pick products from your listings.</p>
           )}
@@ -163,7 +187,7 @@ export function OrderCart({
           <h2 className="text-lg font-bold">Shipment details</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="label" htmlFor="supplier">Supplier or sender</label>
+              <label className="label" htmlFor="supplier">Supplier or sender <span className="text-fox-dark">*</span></label>
               <input id="supplier" className="field" placeholder="e.g. Shenzhen Hengli Trading" value={supplierName} onChange={(e) => setSupplier(e.target.value)} />
             </div>
             <div>
@@ -214,9 +238,14 @@ export function OrderCart({
               We take up to {MAX_PALLETS_PER_ORDER} inbound pallets per order. Split the shipment or message us to book space for more. <WhatsAppLink className="underline" text="Hi FoxPrep, I need space for more than 6 pallets.">WhatsApp</WhatsAppLink>
             </p>
           )}
+          {missing.length > 0 && (
+            <ul className="mt-3 space-y-1 rounded-md bg-paper px-3 py-2 text-[13px] text-ink-2">
+              {missing.map((m) => <li key={m}>• {m}</li>)}
+            </ul>
+          )}
           {error && <p role="alert" className="mt-3 rounded-md bg-fox-tint px-3 py-2 text-sm font-medium text-fox-dark">{error}</p>}
 
-          <button className="btn-fox mt-5 w-full" disabled={busy || short || tooManyPallets || q.units < 1} onClick={submit}>
+          <button className="btn-fox mt-5 w-full" disabled={busy || short || tooManyPallets || missing.length > 0} onClick={submit}>
             {busy ? "Placing order…" : payment === "WALLET" ? `Pay ${money(q.totalCents)} and place order` : `Continue to card payment`}
           </button>
           <p className="mt-3 text-center text-[12.5px] text-ink-soft">Cancel free of charge until your cartons arrive.</p>
