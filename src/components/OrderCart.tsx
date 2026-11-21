@@ -165,12 +165,12 @@ export function OrderCart({
               ))}
             </ul>
           )}
-          <div className={`grid gap-2 rounded-lg border border-dashed border-line p-3 ${fbaLike ? "sm:grid-cols-[1fr_120px_130px_90px_auto]" : "sm:grid-cols-[1fr_140px_100px_auto]"}`}>
-            <input className="field" placeholder="Product name *" aria-label="Product name" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-            <input className="field" placeholder="SKU" aria-label="SKU" value={draft.sku} onChange={(e) => setDraft({ ...draft, sku: e.target.value })} />
-            {fbaLike && <input className="field" placeholder="FNSKU (X00…)" aria-label="FNSKU" value={draft.fnsku} onChange={(e) => setDraft({ ...draft, fnsku: e.target.value.toUpperCase() })} />}
-            <input className="field tnum" placeholder="Units *" aria-label="Units" inputMode="numeric" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value.replace(/\D/g, "") })} />
-            <button className="btn-ghost btn-sm" onClick={addManual} disabled={!draftReady}>Add product</button>
+          <div className={`grid grid-cols-2 gap-2 rounded-lg border border-dashed border-line p-3 ${fbaLike ? "sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_auto]" : "sm:grid-cols-[minmax(0,1fr)_110px_auto]"}`}>
+            <input className="field col-span-full min-w-0" placeholder="Product name *" aria-label="Product name" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+            <input className="field min-w-0" placeholder="SKU" aria-label="SKU" value={draft.sku} onChange={(e) => setDraft({ ...draft, sku: e.target.value })} />
+            {fbaLike && <input className="field min-w-0" placeholder="FNSKU (X00…)" aria-label="FNSKU" value={draft.fnsku} onChange={(e) => setDraft({ ...draft, fnsku: e.target.value.toUpperCase() })} />}
+            <input className="field tnum min-w-0" placeholder="Units *" aria-label="Units" inputMode="numeric" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value.replace(/\D/g, "") })} />
+            <button className="btn-ghost btn-sm whitespace-nowrap" onClick={addManual} disabled={!draftReady}>Add product</button>
           </div>
           <p className="tnum mt-2 text-[13px] text-ink-soft">Total: {(itemUnits + (draftReady ? draftQty : 0)).toLocaleString()} units</p>
           {products.length === 0 && (
