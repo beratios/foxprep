@@ -9,6 +9,7 @@ CREATE TYPE "PaymentMethod" AS ENUM ('WALLET','STRIPE');
 CREATE TYPE "TxType" AS ENUM ('TOPUP','CHARGE','REFUND','ADJUSTMENT');
 CREATE TYPE "Provider" AS ENUM ('AMAZON','WALMART');
 CREATE TYPE "PhotoKind" AS ENUM ('INBOUND','OUTBOUND');
+CREATE TYPE "TicketStatus" AS ENUM ('OPEN','ANSWERED','CLOSED');
 CREATE TABLE "User"(id text PRIMARY KEY, email text UNIQUE NOT NULL, "passwordHash" text NOT NULL, name text NOT NULL, company text, phone text, role "Role" NOT NULL DEFAULT 'CUSTOMER', "customerCode" text UNIQUE NOT NULL, "balanceCents" int NOT NULL DEFAULT 0, "termsAcceptedAt" timestamp(3), "createdAt" timestamp(3) NOT NULL DEFAULT now());
 CREATE TABLE "MarketplaceConnection"(id text PRIMARY KEY, "userId" text NOT NULL REFERENCES "User"(id) ON DELETE CASCADE, provider "Provider" NOT NULL, "externalId" text NOT NULL, "storeName" text, region text, secret text NOT NULL, "lastSyncAt" timestamp(3), "lastError" text, "createdAt" timestamp(3) NOT NULL DEFAULT now(), UNIQUE("userId",provider,"externalId"));
 CREATE TABLE "Product"(id text PRIMARY KEY, "userId" text NOT NULL REFERENCES "User"(id) ON DELETE CASCADE, "connectionId" text REFERENCES "MarketplaceConnection"(id) ON DELETE SET NULL, provider "Provider", title text NOT NULL, sku text NOT NULL, asin text, fnsku text, "imageUrl" text, "marketplaceQty" int, "warehouseQty" int NOT NULL DEFAULT 0, "updatedAt" timestamp(3) NOT NULL, UNIQUE("userId",sku));
@@ -18,3 +19,8 @@ CREATE TABLE "OrderEvent"(id text PRIMARY KEY, "orderId" text NOT NULL REFERENCE
 CREATE TABLE "WalletTransaction"(id text PRIMARY KEY, "userId" text NOT NULL REFERENCES "User"(id) ON DELETE CASCADE, type "TxType" NOT NULL, "amountCents" int NOT NULL, "balanceAfterCents" int NOT NULL, description text NOT NULL, "orderId" text, "stripeSession" text UNIQUE, "createdAt" timestamp(3) NOT NULL DEFAULT now());
 CREATE TABLE "OrderPhoto"(id text PRIMARY KEY, "orderId" text NOT NULL REFERENCES "Order"(id) ON DELETE CASCADE, kind "PhotoKind" NOT NULL, url text NOT NULL, "createdAt" timestamp(3) NOT NULL DEFAULT now());
 CREATE INDEX "OrderPhoto_orderId_idx" ON "OrderPhoto"("orderId");
+CREATE TABLE "Ticket"(id text PRIMARY KEY, ref text UNIQUE NOT NULL, "userId" text NOT NULL REFERENCES "User"(id) ON DELETE CASCADE, "orderId" text REFERENCES "Order"(id) ON DELETE SET NULL, subject text NOT NULL, status "TicketStatus" NOT NULL DEFAULT 'OPEN', "lastMessageAt" timestamp(3) NOT NULL DEFAULT now(), "createdAt" timestamp(3) NOT NULL DEFAULT now());
+CREATE INDEX "Ticket_status_lastMessageAt_idx" ON "Ticket"(status, "lastMessageAt");
+CREATE INDEX "Ticket_userId_lastMessageAt_idx" ON "Ticket"("userId", "lastMessageAt");
+CREATE TABLE "TicketMessage"(id text PRIMARY KEY, "ticketId" text NOT NULL REFERENCES "Ticket"(id) ON DELETE CASCADE, "fromAdmin" boolean NOT NULL DEFAULT false, author text NOT NULL, body text NOT NULL, photos text[] NOT NULL DEFAULT '{}', "createdAt" timestamp(3) NOT NULL DEFAULT now());
+CREATE INDEX "TicketMessage_ticketId_createdAt_idx" ON "TicketMessage"("ticketId", "createdAt");

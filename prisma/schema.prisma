@@ -40,6 +40,12 @@ enum TxType {
   ADJUSTMENT
 }
 
+enum TicketStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
 enum PhotoKind {
   INBOUND
   OUTBOUND
@@ -68,6 +74,7 @@ model User {
   transactions WalletTransaction[]
   connections  MarketplaceConnection[]
   products     Product[]
+  tickets      Ticket[]
 }
 
 model Order {
@@ -102,6 +109,7 @@ model Order {
   items  OrderItem[]
   events OrderEvent[]
   photos OrderPhoto[]
+  tickets Ticket[]
 
   @@index([userId, createdAt])
   @@index([status])
@@ -121,6 +129,37 @@ model OrderItem {
   url       String?
   quantity  Int
   receivedQty Int?
+}
+
+/// Support request. OPEN = waiting for FoxPrep, ANSWERED = waiting for the customer.
+model Ticket {
+  id            String          @id @default(cuid())
+  ref           String          @unique
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId       String?
+  order         Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  subject       String
+  status        TicketStatus    @default(OPEN)
+  lastMessageAt DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  messages      TicketMessage[]
+
+  @@index([status, lastMessageAt])
+  @@index([userId, lastMessageAt])
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  fromAdmin Boolean  @default(false)
+  author    String
+  body      String
+  photos    String[]
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
 }
 
 model OrderPhoto {

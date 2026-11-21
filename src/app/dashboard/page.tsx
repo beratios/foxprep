@@ -64,7 +64,7 @@ export default async function Overview() {
         </section>
         <section>
           <h2 className="mb-3 text-lg font-bold">Our address for your supplier</h2>
-          <AddressCard customerCode={user.customerCode} name={user.company || user.name} />
+          <AddressCard customerCode={user.customerCode} name={user.company || user.name} hasCompany={!!user.company} />
           <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">Create an order before anything ships so we know what&apos;s coming. Each order adds its own number to the ATTN line.</p>
         </section>
       </div>

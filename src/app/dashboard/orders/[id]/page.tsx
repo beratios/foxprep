@@ -157,11 +157,12 @@ export default async function OrderPage({ params, searchParams }: { params: { id
           {order.paidAt && order.status !== "CANCELLED" ? (
             <>
               <h2 className="text-lg font-bold">Shipping address for your supplier</h2>
-              <AddressCard customerCode={user.customerCode} orderRef={order.ref} name={user.company || user.name} />
+              <AddressCard customerCode={user.customerCode} orderRef={order.ref} name={user.company || user.name} hasCompany={!!user.company} />
             </>
           ) : order.status !== "CANCELLED" ? (
             <div className="panel p-5 text-[14.5px] text-ink-2">The shipping address appears here once the order is paid.</div>
           ) : null}
+          <a href={`/dashboard/support?order=${order.id}`} className="btn-ghost btn-sm w-full">Ask about this order</a>
           {["AWAITING_PAYMENT", "AWAITING_INBOUND"].includes(order.status) && (
             <div className="pt-2">
               <ActionButton endpoint={`/api/orders/${order.id}/cancel`} confirm={order.paidAt ? "Cancel this order? The full amount goes back to your balance." : "Cancel this order?"} className="text-sm font-semibold text-fox-dark hover:underline">

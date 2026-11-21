@@ -1,7 +1,7 @@
 import { warehouse, attentionLine } from "@/lib/warehouse";
 import { CopyButton } from "./CopyButton";
 
-export function AddressCard({ customerCode, orderRef, name }: { customerCode: string; orderRef?: string; name: string }) {
+export function AddressCard({ customerCode, orderRef, name, hasCompany = true }: { customerCode: string; orderRef?: string; name: string; hasCompany?: boolean }) {
   const w = warehouse();
   const attn = orderRef ? attentionLine(customerCode, orderRef) : `ATTN: ${customerCode}`;
   const text = [`${name} c/o ${w.name}`, attn, w.street, `${w.city}, ${w.province} ${w.postal}`, w.country, w.phone].join("\n");
@@ -25,6 +25,12 @@ export function AddressCard({ customerCode, orderRef, name }: { customerCode: st
       <p className="mt-2 text-[12.5px] leading-snug">
         You are the importer of record. Your name or company goes on the commercial invoice and customs paperwork, and duties and taxes are billed to you, not to FoxPrep.
       </p>
+      {!hasCompany && (
+        <p className="mt-3 rounded-[3px] border-2 border-red-600 bg-red-50 px-2 py-1.5 text-[13px] font-semibold text-red-700">
+          Add your company name for customs paperwork.{" "}
+          <a href="/dashboard/account" className="underline">Go to account settings</a>
+        </p>
+      )}
     </div>
   );
 }
