@@ -42,7 +42,8 @@ export function OrderCart({
   // A product typed into the form but not yet added still counts, so nobody loses it by skipping "Add product"
   const draftQty = parseInt(draft.quantity, 10) || 0;
   const draftReady = Boolean(draft.title.trim() && draftQty > 0);
-  const units = itemUnits + (draftReady ? draftQty : 0) || initial.units;
+  // Units typed in the form count right away, before "Add product", so the price is always live
+  const units = itemUnits + draftQty || initial.units;
 
   // Per-unit services that covered every unit keep covering every unit when the count changes
   const prevUnits = useRef(units);
@@ -209,7 +210,7 @@ export function OrderCart({
             <button className="btn-ghost btn-sm whitespace-nowrap" onClick={addManual} disabled={!draftReady}>Add product</button>
           </div>
           {errUrl && <p className="mt-2 text-sm font-semibold text-red-600">The link should start with https://</p>}
-          <p className="tnum mt-2 text-[13px] text-ink-soft">Total: {(itemUnits + (draftReady ? draftQty : 0)).toLocaleString()} units</p>
+          <p className="tnum mt-2 text-[13px] text-ink-soft">Total: {(itemUnits + draftQty).toLocaleString()} units</p>
           {products.length === 0 && (
             <p className="mt-2 text-[13px] text-ink-soft"><Link href="/dashboard/stores" className="font-semibold text-ink underline">Connect your Amazon or Walmart store</Link> to pick products from your listings.</p>
           )}

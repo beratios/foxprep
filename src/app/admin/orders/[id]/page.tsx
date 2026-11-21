@@ -5,9 +5,10 @@ import { STATUS } from "@/lib/status";
 import { money, CHANNEL_LABEL, BASIS_LABEL, rateLabel, type QuoteLine } from "@/lib/pricing";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AdminOrderForm } from "@/components/AdminOrderForm";
+import { PhotoUploader } from "@/components/PhotoUploader";
 
 export default async function AdminOrder({ params }: { params: { id: string } }) {
-  const o = await prisma.order.findUnique({ where: { id: params.id }, include: { user: true, items: true, events: { orderBy: { createdAt: "desc" } } } });
+  const o = await prisma.order.findUnique({ where: { id: params.id }, include: { user: true, items: true, photos: { orderBy: { createdAt: "asc" } }, events: { orderBy: { createdAt: "desc" } } } });
   if (!o) notFound();
   const lines = o.lines as unknown as QuoteLine[];
   return (
@@ -71,7 +72,8 @@ export default async function AdminOrder({ params }: { params: { id: string } })
             </ul>
           </section>
         </div>
-        <aside>
+        <aside className="space-y-6">
+          <PhotoUploader orderId={o.id} photos={o.photos.map((p) => ({ id: p.id, url: p.url, kind: p.kind }))} />
           <AdminOrderForm
             order={{ id: o.id, status: o.status, outboundTracking: o.outboundTracking ?? "", adminNotes: o.adminNotes ?? "" }}
             items={o.items.map((i) => ({ id: i.id, title: i.title, sku: i.sku, quantity: i.quantity, receivedQty: i.receivedQty }))}

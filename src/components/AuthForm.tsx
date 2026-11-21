@@ -57,6 +57,17 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <label className="label" htmlFor="password">Password</label>
         <input id="password" name="password" type="password" className="field" autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={8} required />
       </div>
+      {mode === "register" && (
+        <label className="flex items-start gap-3 text-sm leading-snug text-ink-2">
+          <input type="checkbox" name="acceptTerms" value="yes" required className="mt-0.5 h-5 w-5 shrink-0 accent-[#E8590C]" />
+          <span>
+            I agree to the{" "}
+            <Link href="/terms" target="_blank" className="font-semibold text-ink underline">Terms of Service</Link>{" "}
+            and won&apos;t send any{" "}
+            <Link href="/terms#prohibited" target="_blank" className="font-semibold text-ink underline">prohibited items</Link>. I am the importer of record for my goods.
+          </span>
+        </label>
+      )}
       {error && <p role="alert" className="rounded-md bg-fox-tint px-3 py-2 text-sm font-medium text-fox-dark">{error}</p>}
       <button className="btn-fox w-full" disabled={busy}>{busy ? "One moment…" : mode === "login" ? "Log in" : "Create account"}</button>
       <p className="text-center text-sm text-ink-soft">

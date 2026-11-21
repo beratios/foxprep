@@ -2,12 +2,14 @@ import type Stripe from "stripe";
 import { prisma } from "./db";
 import { postTransaction, creditTopUp } from "./wallet";
 import { stripe, appUrl } from "./stripe";
+import { notifyOrderPaid } from "./notify";
 
 export class PaymentError extends Error {}
 
 /** Charge an unpaid order from the customer's balance. */
 export async function payOrderWithWallet(orderId: string, userId: string) {
-  return prisma.$transaction(async (tx) => {
+  let fresh = false;
+  const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({ where: { id: orderId, userId } });
     if (!order) throw new PaymentError("Order not found.");
     if (order.paidAt) return order;
@@ -24,8 +26,11 @@ export async function payOrderWithWallet(orderId: string, userId: string) {
       data: { paidAt: new Date(), paymentMethod: "WALLET", status: "AWAITING_INBOUND" },
     });
     await tx.orderEvent.create({ data: { orderId: order.id, status: "AWAITING_INBOUND", note: "Paid from balance" } });
+    fresh = true;
     return paid;
   });
+  if (fresh) await notifyOrderPaid(orderId).catch(() => {});
+  return result;
 }
 
 export async function orderCheckoutUrl(orderId: string, userId: string) {
@@ -81,6 +86,7 @@ export async function fulfillCheckout(session: Stripe.Checkout.Session) {
   if (kind === "topup" && userId) {
     await creditTopUp(userId, session.amount_total ?? 0, session.id);
   } else if (kind === "order" && orderId) {
+    let fresh = false;
     await prisma.$transaction(async (tx) => {
       const o = await tx.order.findUnique({ where: { id: orderId } });
       if (!o || o.paidAt) return;
@@ -89,7 +95,9 @@ export async function fulfillCheckout(session: Stripe.Checkout.Session) {
         data: { paidAt: new Date(), paymentMethod: "STRIPE", status: "AWAITING_INBOUND", stripeSession: session.id },
       });
       await tx.orderEvent.create({ data: { orderId, status: "AWAITING_INBOUND", note: "Paid by card" } });
+      fresh = true;
     });
+    if (fresh) await notifyOrderPaid(orderId).catch(() => {});
   }
 }
 

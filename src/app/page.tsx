@@ -315,6 +315,7 @@ export default async function Home() {
           <Logo light />
           <p>FoxPrep prep center, Hamilton, Ontario, Canada</p>
           <WhatsAppLink className="inline-flex items-center gap-2 font-semibold text-white hover:text-fox"><WhatsAppIcon className="h-5 w-5" /> WhatsApp</WhatsAppLink>
+          <Link href="/terms" className="font-semibold text-white hover:text-fox">Terms and prohibited items</Link>
           <p>Prices in CAD, before 13% HST. {SERVICE_BY_CODE.prep.name} from 45¢ a unit.</p>
         </div>
       </footer>

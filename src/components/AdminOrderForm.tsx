@@ -18,6 +18,7 @@ export function AdminOrderForm({
   const [outboundTracking, setOut] = useState(order.outboundTracking);
   const [adminNotes, setAdminNotes] = useState(order.adminNotes);
   const [received, setReceived] = useState<Record<string, string>>(Object.fromEntries(items.map((i) => [i.id, i.receivedQty?.toString() ?? ""])));
+  const [notify, setNotify] = useState(true);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -36,6 +37,7 @@ export function AdminOrderForm({
             note,
             outboundTracking,
             adminNotes,
+            notify,
             received: Object.fromEntries(Object.entries(received).filter(([, v]) => v !== "").map(([k, v]) => [k, parseInt(v, 10)])),
           }),
         });
@@ -80,6 +82,10 @@ export function AdminOrderForm({
         <label className="label" htmlFor="an">Internal notes</label>
         <textarea id="an" rows={3} className="field" value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} />
       </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" className="h-4 w-4 accent-[#E8590C]" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+        Email the customer when the status changes
+      </label>
       <button className="btn-fox w-full" disabled={busy}>{busy ? "Saving…" : "Save changes"}</button>
       {msg && <p role="status" className="text-center text-sm font-semibold">{msg}</p>}
     </form>

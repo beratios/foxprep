@@ -8,13 +8,14 @@ import { money, CHANNEL_LABEL, BASIS_LABEL, rateLabel, HST_RATE, type QuoteLine 
 import { StatusBadge } from "@/components/StatusBadge";
 import { AddressCard } from "@/components/AddressCard";
 import { ActionButton } from "@/components/ActionButton";
+import { PhotoGallery } from "@/components/PhotoUploader";
 
 export default async function OrderPage({ params, searchParams }: { params: { id: string }; searchParams: { session_id?: string; placed?: string } }) {
   const user = await requireUser();
   if (searchParams.session_id) await confirmSession(searchParams.session_id);
   const order = await prisma.order.findFirst({
     where: { id: params.id, userId: user.id },
-    include: { items: true, events: { orderBy: { createdAt: "asc" } } },
+    include: { items: true, photos: { orderBy: { createdAt: "asc" } }, events: { orderBy: { createdAt: "asc" } } },
   });
   if (!order) notFound();
   const lines = order.lines as unknown as QuoteLine[];
@@ -62,6 +63,16 @@ export default async function OrderPage({ params, searchParams }: { params: { id
               </div>
             </section>
           )}
+
+          {order.outboundTracking && ["SHIPPED", "COMPLETED"].includes(order.status) && (
+            <section className="rounded-lg border-2 border-ok bg-ok/5 p-5">
+              <h2 className="font-bold text-ok">Shipped</h2>
+              <p className="mt-1 text-sm text-ink-2">Tracking or shipment ID</p>
+              <p className="tnum mt-1 break-words text-lg font-bold">{order.outboundTracking}</p>
+            </section>
+          )}
+
+          <PhotoGallery photos={order.photos.map((p) => ({ id: p.id, url: p.url, kind: p.kind }))} />
 
           <section>
             <h2 className="mb-3 text-lg font-bold">Services and charges</h2>

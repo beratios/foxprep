@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { notifyStatus } from "@/lib/notify";
 
 const Body = z.object({
   status: z.enum(["AWAITING_PAYMENT", "AWAITING_INBOUND", "RECEIVED", "IN_PREP", "SHIPPED", "COMPLETED", "CANCELLED"]),
@@ -9,6 +10,7 @@ const Body = z.object({
   outboundTracking: z.string().max(500).optional(),
   adminNotes: z.string().max(5000).optional(),
   received: z.record(z.number().int().min(0)).optional(),
+  notify: z.boolean().optional(),
 });
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -40,5 +42,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     });
     if (b.status !== order.status || b.note) await tx.orderEvent.create({ data: { orderId: order.id, status: b.status, note: b.note || null } });
   });
+  if (b.notify !== false && b.status !== order.status) await notifyStatus(order.id, b.note).catch(() => {});
   return NextResponse.json({ ok: true });
 }

@@ -40,6 +40,11 @@ enum TxType {
   ADJUSTMENT
 }
 
+enum PhotoKind {
+  INBOUND
+  OUTBOUND
+}
+
 enum Provider {
   AMAZON
   WALMART
@@ -56,6 +61,7 @@ model User {
   /// Short code printed on every inbound carton, e.g. FX-4821
   customerCode String   @unique
   balanceCents Int      @default(0)
+  termsAcceptedAt DateTime?
   createdAt    DateTime @default(now())
 
   orders       Order[]
@@ -95,6 +101,7 @@ model Order {
 
   items  OrderItem[]
   events OrderEvent[]
+  photos OrderPhoto[]
 
   @@index([userId, createdAt])
   @@index([status])
@@ -114,6 +121,17 @@ model OrderItem {
   url       String?
   quantity  Int
   receivedQty Int?
+}
+
+model OrderPhoto {
+  id        String    @id @default(cuid())
+  orderId   String
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  kind      PhotoKind
+  url       String
+  createdAt DateTime  @default(now())
+
+  @@index([orderId])
 }
 
 model OrderEvent {
