@@ -1,5 +1,7 @@
 import type { OrderStatus } from "@/generated/prisma/client";
 import { STATUS } from "@/lib/status";
+import { getI18n } from "@/i18n/server";
+import { L } from "@/i18n/labels";
 
 const TONES = {
   fox: "bg-fox-tint text-fox-dark",
@@ -9,7 +11,8 @@ const TONES = {
   muted: "bg-line text-ink-soft",
 };
 
-export function StatusBadge({ status }: { status: OrderStatus }) {
+export async function StatusBadge({ status }: { status: OrderStatus }) {
   const s = STATUS[status];
-  return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[12.5px] font-semibold ${TONES[s.tone]}`}>{s.label}</span>;
+  const { t } = await getI18n();
+  return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[12.5px] font-semibold ${TONES[s.tone]}`}>{L.status(t, status)}</span>;
 }

@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { shrinkImage as shrink } from "@/lib/shrinkImage";
+import { useI18n } from "@/i18n/client";
 
 interface Photo { id: string; url: string; kind: "INBOUND" | "OUTBOUND" }
 
 export function PhotoUploader({ orderId, photos }: { orderId: string; photos: Photo[] }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [kind, setKind] = useState<"INBOUND" | "OUTBOUND">(photos.some((p) => p.kind === "INBOUND") ? "OUTBOUND" : "INBOUND");
   const [busy, setBusy] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export function PhotoUploader({ orderId, photos }: { orderId: string; photos: Ph
   const groups: [Photo["kind"], string][] = [["INBOUND", "On arrival"], ["OUTBOUND", "Before shipping"]];
   return (
     <div className="panel space-y-4 p-5">
-      <h2 className="text-lg font-bold">Photos</h2>
+      <h2 className="text-lg font-bold">{t("components_photouploader.photos", "Photos")}</h2>
       <div className="grid grid-cols-2 gap-2">
         {groups.map(([k, label]) => (
           <button key={k} type="button" onClick={() => setKind(k)} className={`rounded-md border-2 px-3 py-2 text-sm font-semibold ${kind === k ? "border-ink bg-ink text-white" : "border-line"}`}>
@@ -64,26 +66,30 @@ export function PhotoUploader({ orderId, photos }: { orderId: string; photos: Ph
                 <div key={p.id} className="group relative">
                   <a href={p.url} target="_blank" rel="noopener noreferrer">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.url} alt={`${label} photo`} className="aspect-[4/3] w-full rounded-md border border-line object-cover" />
+                    <img src={p.url} alt={label} className="aspect-[4/3] w-full rounded-md border border-line object-cover" />
                   </a>
-                  <button type="button" onClick={() => remove(p.id)} className="absolute right-1 top-1 rounded bg-white/90 px-1.5 text-xs font-bold text-red-600 opacity-0 shadow group-hover:opacity-100 focus:opacity-100" aria-label="Delete photo">✕</button>
+                  <button type="button" onClick={() => remove(p.id)} className="absolute right-1 top-1 rounded bg-white/90 px-1.5 text-xs font-bold text-red-600 opacity-0 shadow group-hover:opacity-100 focus:opacity-100" aria-label={t("components_photouploader.delete_photo", "Delete photo")}>✕</button>
                 </div>
               ))}
             </div>
           </div>
         );
       })}
-      <p className="text-[12.5px] text-ink-soft">Add photos first, then change the status. The customer gets an email with the photos for that step.</p>
+      <p className="text-[12.5px] text-ink-soft">{t("components_photouploader.add_photos_first_then_change_the_status_", "Add photos first, then change the status. The customer gets an email with the photos for that step.")}</p>
     </div>
   );
 }
 
 export function PhotoGallery({ photos }: { photos: Photo[] }) {
-  const groups: [Photo["kind"], string][] = [["INBOUND", "When it arrived"], ["OUTBOUND", "Before it shipped"]];
+  const { t } = useI18n();
+  const groups: [Photo["kind"], string][] = [
+    ["INBOUND", t("photos.arrived", "When it arrived")],
+    ["OUTBOUND", t("photos.shipped", "Before it shipped")],
+  ];
   if (!photos.length) return null;
   return (
     <section>
-      <h2 className="mb-3 text-lg font-bold">Photos</h2>
+      <h2 className="mb-3 text-lg font-bold">{t("components_photouploader.photos", "Photos")}</h2>
       <div className="space-y-5">
         {groups.map(([k, label]) => {
           const list = photos.filter((p) => p.kind === k);
@@ -95,7 +101,7 @@ export function PhotoGallery({ photos }: { photos: Photo[] }) {
                 {list.map((p) => (
                   <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.url} alt={`${label} photo`} className="aspect-[4/3] w-full rounded-md border border-line object-cover" />
+                    <img src={p.url} alt={label} className="aspect-[4/3] w-full rounded-md border border-line object-cover" />
                   </a>
                 ))}
               </div>

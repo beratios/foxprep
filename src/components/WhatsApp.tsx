@@ -14,7 +14,7 @@ function Icon({ className = "h-6 w-6" }: { className?: string }) {
 }
 
 /** Floating chat button. Renders nothing until NEXT_PUBLIC_WHATSAPP_NUMBER is set. */
-export function WhatsAppButton({ text }: { text?: string }) {
+export function WhatsAppButton({ text, label = "WhatsApp us" }: { text?: string; label?: string }) {
   const href = whatsappLink(text);
   if (!href) return null;
   return (
@@ -22,10 +22,10 @@ export function WhatsAppButton({ text }: { text?: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="wa-float fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-[#25D366] py-3 pl-3 pr-4 font-semibold text-white shadow-[0_10px_30px_-10px_rgba(20,33,61,.6)] hover:bg-[#1EBE5A]"
+      className="wa-float fixed bottom-5 end-5 z-40 flex items-center gap-2 rounded-full bg-[#25D366] py-3 pl-3 pr-4 font-semibold text-white shadow-[0_10px_30px_-10px_rgba(20,33,61,.6)] hover:bg-[#1EBE5A]"
     >
       <Icon />
-      <span className="text-[15px]">WhatsApp us</span>
+      <span className="text-[15px]">{label}</span>
     </a>
   );
 }

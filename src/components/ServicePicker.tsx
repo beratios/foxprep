@@ -1,6 +1,8 @@
 "use client";
 
-import { BASIS_LABEL, GROUP_LABELS, SERVICES, rateFor, rateLabel, tierIndex, type Channel, type Service, type ServiceCode } from "@/lib/pricing";
+import { SERVICES, rateFor, rateLabel, tierIndex, type Channel, type Service, type ServiceCode } from "@/lib/pricing";
+import { useI18n } from "@/i18n/client";
+import { L } from "@/i18n/labels";
 
 export type ServiceValues = Partial<Record<ServiceCode, number>>;
 
@@ -22,6 +24,7 @@ export function ServicePicker({
   values: ServiceValues;
   onChange: (v: ServiceValues) => void;
 }) {
+  const { t } = useI18n();
   const tier = tierIndex(units);
   const groups = (["core", "packaging", "cartons", "pallets", "fbm"] as const)
     .map((g) => ({ g, items: SERVICES.filter((s) => s.group === g && s.channels.includes(channel)) }))
@@ -38,18 +41,19 @@ export function ServicePicker({
     <div className="space-y-7">
       {groups.map(({ g, items }) => (
         <fieldset key={g}>
-          <legend className="mb-2 text-[15px] font-bold text-ink">{GROUP_LABELS[g]}</legend>
+          <legend className="mb-2 text-[15px] font-bold text-ink">{L.group(t, g)}</legend>
           {(g === "cartons" || g === "pallets") && (
             <p className="mb-3 rounded-md bg-fox-tint/60 px-3 py-2 text-[13px] leading-snug text-ink-2">
-              Not sure how many {g === "cartons" ? "cartons" : "pallets"}? Leave these blank. We count everything when it arrives and when it leaves, send you photos,
-              and charge the exact amount from your balance before anything ships out.
+              {g === "cartons"
+                ? t("picker.cartonsNote", "Not sure how many cartons? Leave these blank. We count everything when it arrives and when it leaves, send you photos, and charge the exact amount from your balance before anything ships out.")
+                : t("picker.palletsNote", "Not sure how many pallets? Leave these blank. We count everything when it arrives and when it leaves, send you photos, and charge the exact amount from your balance before anything ships out.")}
             </p>
           )}
           <ul className="divide-y divide-line rounded-lg border border-line bg-white">
             {items.map((s) => {
               const required = s.requiredFor?.includes(channel);
               const on = required || (values[s.code] ?? 0) > 0;
-              const t = s.code === "fbm_pick" ? tierIndex(values[s.code] ?? 0) : tier;
+              const ti = s.code === "fbm_pick" ? tierIndex(values[s.code] ?? 0) : tier;
               const id = `svc-${s.code}`;
               return (
                 <li key={s.code} className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 ${on ? "bg-fox-tint/40" : ""}`}>
@@ -62,15 +66,15 @@ export function ServicePicker({
                     onChange={(e) => toggle(s, e.target.checked)}
                   />
                   <label htmlFor={id} className="min-w-0 flex-1 basis-[calc(100%-2.25rem)] cursor-pointer sm:basis-0">
-                    <span className="block text-[15px] font-semibold leading-tight">{s.name}{required && <span className="ml-2 text-xs font-medium text-ok">Included</span>}</span>
-                    <span className="block text-[13px] leading-snug text-ink-soft">{s.detail}</span>
+                    <span className="block text-[15px] font-semibold leading-tight">{L.svcName(t, s)}{required && <span className="ms-2 text-xs font-medium text-ok">{t("picker.included", "Included")}</span>}</span>
+                    <span className="block text-[13px] leading-snug text-ink-soft">{L.svcDetail(t, s)}</span>
                   </label>
-                  <span className="tnum ml-9 text-sm font-semibold text-ink sm:ml-0 sm:w-[92px] sm:text-right">
-                    {rateLabel(rateFor(s, t))}<span className="font-normal text-ink-soft"> / {BASIS_LABEL[s.basis]}</span>
+                  <span className="tnum ms-9 text-sm font-semibold text-ink sm:ms-0 sm:w-[92px] sm:text-end">
+                    {rateLabel(rateFor(s, ti))}<span className="font-normal text-ink-soft"> / {L.basis(t, s.basis)}</span>
                   </span>
                   {!required && on && (
                     <label className="flex items-center gap-2 text-sm text-ink-soft">
-                      <span className="sr-only">Quantity for {s.name}</span>
+                      <span className="sr-only">{t("picker.qtyFor", "Quantity for {name}", { name: L.svcName(t, s) })}</span>
                       <span aria-hidden>×</span>
                       <input
                         type="number"
@@ -80,10 +84,10 @@ export function ServicePicker({
                         value={values[s.code] ?? ""}
                         onChange={(e) => onChange({ ...values, [s.code]: Math.max(0, parseInt(e.target.value, 10) || 0) })}
                       />
-                      <span>{BASIS_LABEL[s.basis]}s</span>
+                      <span>{L.basisPlural(t, s.basis)}</span>
                     </label>
                   )}
-                  {required && <span className="tnum text-sm text-ink-soft">× {units.toLocaleString()} units</span>}
+                  {required && <span className="tnum text-sm text-ink-soft">× {L.qty(t, units, "unit")}</span>}
                 </li>
               );
             })}

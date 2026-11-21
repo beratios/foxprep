@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { FREE_STORAGE_DAYS, STORAGE } from "@/lib/pricing";
+import { getI18n } from "@/i18n/server";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export const metadata: Metadata = { title: "Terms of Service and prohibited items — FoxPrep" };
 
@@ -24,16 +26,22 @@ function H({ id, children }: { id: string; children: React.ReactNode }) {
   return <h2 id={id} className="wide mt-12 scroll-mt-20 text-xl font-extrabold">{children}</h2>;
 }
 
-export default function Terms() {
+export default async function Terms() {
+  const { t, locale } = await getI18n();
   return (
     <>
       <header className="border-b border-line">
         <div className="mx-auto flex h-16 max-w-page items-center justify-between px-5">
           <Logo />
-          <Link href="/register" className="btn-fox btn-sm">Create account</Link>
+          <div className="flex items-center gap-2"><LanguageSwitcher compact /><Link href="/register" className="btn-fox btn-sm">{t("nav.register", "Create account")}</Link></div>
         </div>
       </header>
-      <main className="mx-auto max-w-[72ch] px-5 py-12 text-[15.5px] leading-relaxed text-ink-2 [&_li]:mt-2 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
+      <main dir="ltr" lang="en" className="mx-auto max-w-[72ch] px-5 py-12 text-[15.5px] leading-relaxed text-ink-2 [&_li]:mt-2 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
+        {locale !== "en" && (
+          <p dir="auto" lang={locale} className="mb-6 rounded-md bg-fox-tint px-4 py-3 text-[14px] font-medium text-ink">
+            {t("terms.englishOnly", "These terms are published in English. The English version is the binding one.")}
+          </p>
+        )}
         <h1 className="wide text-3xl font-black tracking-tight text-ink md:text-4xl">Terms of Service</h1>
         <p className="text-sm text-ink-soft">Last updated {UPDATED}</p>
         <p>
