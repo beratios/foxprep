@@ -32,6 +32,11 @@ export function HeroQuote({ signedIn, children }: { signedIn: boolean; children:
   }, []);
 
   useEffect(() => {
+    document.body.toggleAttribute("data-quote-open", open);
+    return () => document.body.removeAttribute("data-quote-open");
+  }, [open]);
+
+  useEffect(() => {
     if (!open || !panel.current) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     panel.current.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });

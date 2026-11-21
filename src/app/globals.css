@@ -40,3 +40,6 @@ body { @apply bg-paper text-ink antialiased; font-feature-settings: "tnum" 0; }
   .print-in { animation: none; }
   * { scroll-behavior: auto !important; }
 }
+
+/* Lift the WhatsApp button above the sticky total bar on phones */
+@media (max-width: 1023px) { body[data-quote-open] .wa-float { bottom: 5.5rem; } }
