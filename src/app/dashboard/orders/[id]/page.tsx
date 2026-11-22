@@ -10,6 +10,7 @@ import { AddressCard } from "@/components/AddressCard";
 import { ActionButton } from "@/components/ActionButton";
 import { PhotoGallery } from "@/components/PhotoUploader";
 import { OrderDocuments } from "@/components/OrderDocuments";
+import { OrderItemsList } from "@/components/OrderItemsList";
 import { getI18n } from "@/i18n/server";
 import { L } from "@/i18n/labels";
 
@@ -124,21 +125,11 @@ export default async function OrderPage({ params, searchParams }: { params: { id
           {order.items.length > 0 && (
             <section>
               <h2 className="mb-3 text-lg font-bold">{t("order.products", "Products")}</h2>
-              <ul className="panel divide-y divide-line">
-                {order.items.map((i) => (
-                  <li key={i.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold">{i.title}</div>
-                      <div className="tnum text-[12.5px] text-ink-soft">{[i.sku && `SKU ${i.sku}`, i.fnsku && `FNSKU ${i.fnsku}`, i.asin && `ASIN ${i.asin}`].filter(Boolean).join(", ")}</div>
-                      {i.url && <a href={i.url} target="_blank" rel="noopener noreferrer" className="block truncate text-[12.5px] underline">{i.url}</a>}
-                    </div>
-                    <div className="tnum text-end text-sm">
-                      <div className="font-semibold">{t("order.expected", "{n} expected", { n: i.quantity.toLocaleString() })}</div>
-                      {i.receivedQty != null && <div className={i.receivedQty === i.quantity ? "text-ok" : "text-fox-dark"}>{t("order.received", "{n} received", { n: i.receivedQty.toLocaleString() })}</div>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <OrderItemsList
+                orderId={order.id}
+                editable={["AWAITING_PAYMENT", "AWAITING_INBOUND", "RECEIVED"].includes(order.status)}
+                items={order.items.map((i) => ({ id: i.id, title: i.title, sku: i.sku, fnsku: i.fnsku, asin: i.asin, url: i.url, quantity: i.quantity, receivedQty: i.receivedQty }))}
+              />
             </section>
           )}
 

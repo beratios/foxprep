@@ -40,7 +40,10 @@ export default async function AdminOrder({ params }: { params: { id: string } })
           </section>
           {o.items.length > 0 && (
             <section>
-              <h2 className="mb-3 text-lg font-bold">Products</h2>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-bold">Products</h2>
+                {o.channel !== "FBM" && <Link href={`/admin/orders/${o.id}/labels`} className="btn-fox btn-sm">Print FNSKU labels</Link>}
+              </div>
               <ul className="panel divide-y divide-line">
                 {o.items.map((i) => (
                   <li key={i.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-[14.5px]">
