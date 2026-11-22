@@ -1,3 +1,4 @@
+import { WaLink } from "@/components/WaLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -21,7 +22,7 @@ export default async function AdminTicket({ params }: { params: { id: string } }
       </div>
       <p className="mt-1 text-ink-soft">
         <span className="tnum">{t.ref}</span> from <span className="tnum font-semibold text-fox-dark">{t.user.customerCode}</span> {t.user.company || t.user.name}, {t.user.email}
-        {t.user.phone ? `, ${t.user.phone}` : ""}
+        {t.user.phone && <>, <WaLink phone={t.user.phone} /></>}
         {t.order && <> about <Link href={`/admin/orders/${t.order.id}`} className="font-semibold text-ink underline">{t.order.ref}</Link></>}
       </p>
       <div className="mt-8"><TicketThread messages={t.messages} viewerIsAdmin /></div>

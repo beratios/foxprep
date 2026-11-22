@@ -9,7 +9,7 @@ const Body = z.object({
   name: z.string().trim().min(2, "Enter your name"),
   company: z.string().trim().optional(),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  phone: z.string().trim().optional(),
+  phone: z.string().trim().refine((v) => v.replace(/\D/g, "").length >= 7, "Enter a phone number"),
   password: z.string().min(8, "Use at least 8 characters for the password"),
   acceptTerms: z.literal("yes", { errorMap: () => ({ message: "Accept the Terms of Service to create an account." }) }),
 });

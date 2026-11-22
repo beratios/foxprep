@@ -1,3 +1,4 @@
+import { WaLink } from "@/components/WaLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -19,7 +20,7 @@ export default async function AdminOrder({ params }: { params: { id: string } })
         <StatusBadge status={o.status} />
       </div>
       <p className="mt-1 text-ink-soft">
-        <span className="tnum font-bold text-fox-dark">{o.user.customerCode}</span> {o.user.company || o.user.name}, {o.user.email}{o.user.phone ? `, ${o.user.phone}` : ""}
+        <span className="tnum font-bold text-fox-dark">{o.user.customerCode}</span> {o.user.company || o.user.name}, {o.user.email}{o.user.phone && <>, <WaLink phone={o.user.phone} /></>}
       </p>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_380px]">

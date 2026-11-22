@@ -1,3 +1,4 @@
+import { WaLink } from "@/components/WaLink";
 import { prisma } from "@/lib/db";
 import { money } from "@/lib/pricing";
 import { AdjustBalance } from "@/components/AdjustBalance";
@@ -16,7 +17,7 @@ export default async function Customers() {
             {users.map((u) => (
               <tr key={u.id}>
                 <td className="tnum px-4 py-2.5 font-bold text-fox-dark">{u.customerCode}</td>
-                <td className="px-4 py-2.5"><div className="font-semibold">{u.company || u.name}</div><div className="text-[13px] text-ink-soft">{u.email}</div></td>
+                <td className="px-4 py-2.5"><div className="font-semibold">{u.company || u.name}</div><div className="text-[13px] text-ink-soft">{u.email}</div>{u.phone && <WaLink phone={u.phone} className="text-[13px]" />}</td>
                 <td className="tnum px-4 py-2.5 text-ink-soft">{u.createdAt.toLocaleDateString("en-CA")}</td>
                 <td className="tnum px-4 py-2.5 text-right">{u._count.orders}</td>
                 <td className="tnum px-4 py-2.5 text-right">{u._count.connections}</td>

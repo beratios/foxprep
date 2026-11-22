@@ -25,6 +25,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         ? t("auth.err.name", "Enter your name.")
         : !/^\S+@\S+\.\S+$/.test((body.email || "").trim())
           ? t("auth.err.email", "Enter a valid email.")
+          : mode === "register" && (body.phone || "").replace(/\D/g, "").length < 7
+            ? t("auth.err.phone", "Enter a phone number we can reach you on WhatsApp.")
           : mode === "register" && (body.password || "").length < 8
             ? t("auth.err.password", "Use at least 8 characters for the password.")
             : mode === "register" && body.acceptTerms !== "yes"
@@ -73,8 +75,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       </div>
       {mode === "register" && (
         <div>
-          <label className="label" htmlFor="phone">{t("auth.phone", "Phone")} <span className="font-normal text-ink-soft">({t("common.optional", "optional")})</span></label>
-          <input id="phone" name="phone" type="tel" className="field" autoComplete="tel" />
+          <label className="label" htmlFor="phone">{t("auth.phoneWa", "Phone (WhatsApp)")}</label>
+          <input id="phone" name="phone" type="tel" className="field" autoComplete="tel" placeholder="+1 416 555 0123" required />
+          <p className="mt-1 text-[12.5px] text-ink-soft">{t("auth.phoneHint", "We message you here when your stock arrives and ships.")}</p>
         </div>
       )}
       <div>
