@@ -40,14 +40,17 @@ export type ServiceCode =
   | "relabel"
   | "carton_in"
   | "carton_out"
+  | "box_small"
   | "box_supply"
+  | "box_large"
   | "pallet_in"
   | "pallet_out"
   | "pallet_supply"
   | "fbm_pick"
   | "fbm_extra"
   | "fbm_mailer"
-  | "fbm_box";
+  | "fbm_box"
+  | "fbm_box_large";
 
 export interface Service {
   code: ServiceCode;
@@ -91,14 +94,17 @@ export const SERVICES: readonly Service[] = [
   { code: "relabel", name: "Cover old barcode", detail: "Cover supplier UPC or old labels", basis: "unit", rate: 10, channels: ["FBA", "WFS", "FBM"], group: "packaging" },
   { code: "carton_in", name: "Carton receiving", detail: "Per inbound carton from your supplier", basis: "carton", rate: 150, channels: ["FBA", "WFS", "FBM"], group: "cartons" },
   { code: "carton_out", name: "Outbound carton", detail: "Pack, box contents, carton label for Amazon or Walmart", basis: "carton", rate: 250, channels: ["FBA", "WFS"], group: "cartons" },
-  { code: "box_supply", name: "New shipping box", detail: "Double-wall box when supplier cartons can't be reused", basis: "carton", rate: 200, channels: ["FBA", "WFS"], group: "cartons" },
+  { code: "box_small", name: "New box, small", detail: "Up to 14 in. on the longest side. When supplier cartons can't be reused", basis: "carton", rate: 300, channels: ["FBA", "WFS"], group: "cartons" },
+  { code: "box_supply", name: "New box, medium", detail: "Up to 18×18×18 in.", basis: "carton", rate: 550, channels: ["FBA", "WFS"], group: "cartons" },
+  { code: "box_large", name: "New box, large", detail: "Up to 24×18×18 in., the largest size Amazon accepts", basis: "carton", rate: 750, channels: ["FBA", "WFS"], group: "cartons" },
   { code: "pallet_in", name: "Pallet receiving", detail: "Check and break down an inbound pallet. Liftgate delivery required", basis: "pallet", rate: 1500, channels: ["FBA", "WFS", "FBM"], group: "pallets" },
   { code: "pallet_out", name: "Pallet build", detail: "Stack, stretch-wrap and label to Amazon pallet rules", basis: "pallet", rate: 2000, channels: ["FBA", "WFS"], group: "pallets" },
   { code: "pallet_supply", name: "Pallet supply", detail: "Heat-treated 48×40 pallet", basis: "pallet", rate: 1200, channels: ["FBA", "WFS"], group: "pallets" },
   { code: "fbm_pick", name: "FBM order", detail: "Pick, pack and attach your shipping label, first item. Postage not included", basis: "order", rate: [300, 275, 250], channels: ["FBM"], group: "fbm" },
   { code: "fbm_extra", name: "Extra item in order", detail: "Each additional item in the same FBM order", basis: "unit", rate: 50, channels: ["FBM"], group: "fbm" },
   { code: "fbm_mailer", name: "Poly mailer", detail: "Padded or plain poly mailer for soft items", basis: "order", rate: 35, channels: ["FBM"], group: "fbm" },
-  { code: "fbm_box", name: "Shipping box", detail: "Corrugated box with void fill for fragile or heavy items", basis: "order", rate: 125, channels: ["FBM"], group: "fbm" },
+  { code: "fbm_box", name: "Shipping box, small", detail: "Up to 12 in. on the longest side, with void fill", basis: "order", rate: 125, channels: ["FBM"], group: "fbm" },
+  { code: "fbm_box_large", name: "Shipping box, large", detail: "Up to 18 in. on the longest side, with void fill", basis: "order", rate: 250, channels: ["FBM"], group: "fbm" },
 ] as const;
 
 export const SERVICE_BY_CODE = Object.fromEntries(SERVICES.map((s) => [s.code, s])) as Record<ServiceCode, Service>;
