@@ -16,6 +16,7 @@
   "addr.goSettings": "Aller aux paramètres du compte",
   "addr.importer": "Vous êtes l'importateur au dossier. Votre nom ou celui de votre entreprise figure sur la facture commerciale et les documents de douane, et les droits et taxes vous sont facturés, et non à FoxPrep.",
   "auth.company": "Entreprise",
+  "auth.country": "Indicatif du pays",
   "auth.createLink": "Créer un compte",
   "auth.email": "Courriel",
   "auth.err.email": "Saisissez un courriel valide.",

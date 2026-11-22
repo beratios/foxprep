@@ -16,6 +16,7 @@
   "addr.goSettings": "Đi tới cài đặt tài khoản",
   "addr.importer": "Bạn là bên nhập khẩu (importer of record). Tên hoặc công ty của bạn sẽ được ghi trên hóa đơn thương mại và giấy tờ hải quan; thuế và phí nhập khẩu sẽ được tính cho bạn, không phải FoxPrep.",
   "auth.company": "Công ty",
+  "auth.country": "Mã quốc gia",
   "auth.createLink": "Tạo tài khoản",
   "auth.email": "Email",
   "auth.err.email": "Vui lòng nhập email hợp lệ.",

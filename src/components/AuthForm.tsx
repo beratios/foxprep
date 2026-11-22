@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { DIAL_CODES, flagEmoji } from "@/lib/dialCodes";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useI18n } from "@/i18n/client";
 
-export function AuthForm({ mode }: { mode: "login" | "register" }) {
+export function AuthForm({ mode, country = "CA" }: { mode: "login" | "register"; country?: string }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const [cc, setCc] = useState(country);
+  const countries = useMemo(() => {
+    let names: Intl.DisplayNames | null = null;
+    try { names = new Intl.DisplayNames([locale, "en"], { type: "region" }); } catch {}
+    return Object.keys(DIAL_CODES)
+      .map((iso) => ({ iso, name: names?.of(iso) ?? iso }))
+      .sort((a, b) => a.name.localeCompare(b.name, locale));
+  }, [locale]);
   const sp = useSearchParams();
   const next = sp.get("next");
   const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
@@ -19,6 +28,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     setBusy(true);
     setError(null);
     const body = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
+    if (mode === "register") {
+      const local = (body.phone || "").replace(/^\s*\+?\s*/, "").trim();
+      body.phone = (body.phone || "").trim().startsWith("+") ? `+${local}` : `+${DIAL_CODES[cc]} ${local}`;
+    }
     // Check here first so messages appear in the visitor's language
     const problem =
       mode === "register" && (body.name || "").trim().length < 2
@@ -76,7 +89,23 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       {mode === "register" && (
         <div>
           <label className="label" htmlFor="phone">{t("auth.phoneWa", "Phone (WhatsApp)")}</label>
-          <input id="phone" name="phone" type="tel" className="field" autoComplete="tel" placeholder="+1 416 555 0123" required />
+          <div className="flex gap-2">
+            <label className="field relative flex w-[104px] shrink-0 cursor-pointer items-center justify-between gap-1 px-3">
+              <span className="tnum font-semibold">{`${flagEmoji(cc)} +${DIAL_CODES[cc]}`}</span>
+              <span aria-hidden className="text-ink-soft">▾</span>
+            <select
+              aria-label={t("auth.country", "Country code")}
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+              className="absolute inset-0 cursor-pointer opacity-0"
+            >
+              {countries.map((c) => (
+                <option key={c.iso} value={c.iso}>{`${flagEmoji(c.iso)} ${c.name} +${DIAL_CODES[c.iso]}`}</option>
+              ))}
+            </select>
+            </label>
+            <input id="phone" name="phone" type="tel" className="field min-w-0 flex-1" autoComplete="tel-national" placeholder="416 555 0123" required />
+          </div>
           <p className="mt-1 text-[12.5px] text-ink-soft">{t("auth.phoneHint", "We message you here when your stock arrives and ships.")}</p>
         </div>
       )}

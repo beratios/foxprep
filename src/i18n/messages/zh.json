@@ -16,6 +16,7 @@
   "addr.goSettings": "前往账户设置",
   "addr.importer": "您是进口商（importer of record）。您的姓名或公司名称将印在商业发票和报关文件上，关税和税费由您承担，而非 FoxPrep。",
   "auth.company": "公司",
+  "auth.country": "国家/地区代码",
   "auth.createLink": "创建账户",
   "auth.email": "电子邮箱",
   "auth.err.email": "请输入有效的电子邮箱。",

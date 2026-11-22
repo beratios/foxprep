@@ -16,6 +16,7 @@
   "addr.goSettings": "Ir a la configuración de la cuenta",
   "addr.importer": "Usted es el importador de registro. Su nombre o el de su empresa aparece en la factura comercial y en los trámites aduaneros, y los aranceles e impuestos se le cobran a usted, no a FoxPrep.",
   "auth.company": "Empresa",
+  "auth.country": "Código de país",
   "auth.createLink": "Crear una cuenta",
   "auth.email": "Correo electrónico",
   "auth.err.email": "Ingrese un correo electrónico válido.",

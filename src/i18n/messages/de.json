@@ -16,6 +16,7 @@
   "addr.goSettings": "Zu den Kontoeinstellungen",
   "addr.importer": "Sie sind der Importeur (Importer of Record). Ihr Name oder Ihre Firma steht auf der Handelsrechnung und den Zollunterlagen. Zölle und Steuern werden Ihnen in Rechnung gestellt, nicht FoxPrep.",
   "auth.company": "Firma",
+  "auth.country": "Landesvorwahl",
   "auth.createLink": "Konto erstellen",
   "auth.email": "E-Mail",
   "auth.err.email": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",

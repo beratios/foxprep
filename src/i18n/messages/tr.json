@@ -16,6 +16,7 @@
   "addr.goSettings": "Hesap ayarlarına git",
   "addr.importer": "İthalatçı kayıt sahibi (importer of record) sizsiniz. Adınız veya şirketiniz ticari faturaya ve gümrük evraklarına yazılır; gümrük vergileri ve harçlar FoxPrep'e değil size faturalandırılır.",
   "auth.company": "Şirket",
+  "auth.country": "Ülke kodu",
   "auth.createLink": "Hesap oluşturun",
   "auth.email": "E-posta",
   "auth.err.email": "Geçerli bir e-posta adresi girin.",

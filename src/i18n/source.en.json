@@ -16,6 +16,7 @@
   "addr.goSettings": "Go to account settings",
   "addr.importer": "You are the importer of record. Your name or company goes on the commercial invoice and customs paperwork, and duties and taxes are billed to you, not to FoxPrep.",
   "auth.company": "Company",
+  "auth.country": "Country code",
   "auth.createLink": "Create an account",
   "auth.email": "Email",
   "auth.err.email": "Enter a valid email.",

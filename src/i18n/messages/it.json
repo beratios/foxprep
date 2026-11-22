@@ -16,6 +16,7 @@
   "addr.goSettings": "Vai alle impostazioni dell'account",
   "addr.importer": "Lei è l'importatore registrato. Il suo nome o la sua azienda compaiono sulla fattura commerciale e sulla documentazione doganale, e dazi e imposte sono addebitati a Lei, non a FoxPrep.",
   "auth.company": "Azienda",
+  "auth.country": "Prefisso internazionale",
   "auth.createLink": "Crei un account",
   "auth.email": "Email",
   "auth.err.email": "Inserisca un'email valida.",
