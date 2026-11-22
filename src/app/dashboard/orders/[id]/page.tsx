@@ -174,12 +174,12 @@ export default async function OrderPage({ params, searchParams }: { params: { id
         </div>
 
         <aside className="space-y-4">
-          {order.paidAt && order.status !== "CANCELLED" ? (
+          {order.paidAt && !["CANCELLED", "SHIPPED", "COMPLETED"].includes(order.status) ? (
             <>
               <h2 className="text-lg font-bold">{t("order.shipping_address_for_your_supplier", "Shipping address for your supplier")}</h2>
               <AddressCard customerCode={user.customerCode} orderRef={order.ref} name={user.company || user.name} hasCompany={!!user.company} />
             </>
-          ) : order.status !== "CANCELLED" ? (
+          ) : !order.paidAt && order.status !== "CANCELLED" ? (
             <div className="panel p-5 text-[14.5px] text-ink-2">{t("order.the_shipping_address_appears_here_once_t", "The shipping address appears here once the order is paid.")}</div>
           ) : null}
           <a href={`/dashboard/support?order=${order.id}`} className="btn-ghost btn-sm w-full">{t("order.ask_about_this_order", "Ask about this order")}</a>

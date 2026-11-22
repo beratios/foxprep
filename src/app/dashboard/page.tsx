@@ -15,6 +15,8 @@ export default async function Overview() {
     prisma.order.groupBy({ by: ["status"], where: { userId: user.id }, _count: true }),
     prisma.product.count({ where: { userId: user.id } }),
   ]);
+  // The address is only shown while the customer has a paid order still in progress
+  const ACTIVE = ["AWAITING_INBOUND", "RECEIVED", "IN_PREP", "AWAITING_LABELS"];
   const c = (s: string[]) => counts.filter((x) => s.includes(x.status)).reduce((a, x) => a + x._count, 0);
 
   return (
@@ -67,8 +69,17 @@ export default async function Overview() {
         </section>
         <section>
           <h2 className="mb-3 text-lg font-bold">{t("ov.address", "Our address for your supplier")}</h2>
-          <AddressCard customerCode={user.customerCode} name={user.company || user.name} hasCompany={!!user.company} />
-          <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">{t("ov.addressNote", "Create an order before anything ships so we know what's coming. Each order adds its own number to the ATTN line.")}</p>
+          {c(ACTIVE) > 0 ? (
+            <>
+              <AddressCard customerCode={user.customerCode} name={user.company || user.name} hasCompany={!!user.company} />
+              <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">{t("ov.addressNote", "Create an order before anything ships so we know what's coming. Each order adds its own number to the ATTN line.")}</p>
+            </>
+          ) : (
+            <div className="panel p-5 text-[14.5px] text-ink-2">
+              <p>{t("ov.addressLocked", "Our warehouse address appears here once you have a paid order.")}</p>
+              <Link href="/dashboard/orders/new" className="btn-fox btn-sm mt-4">{t("cta.start", "Start an order")}</Link>
+            </div>
+          )}
         </section>
       </div>
     </div>
