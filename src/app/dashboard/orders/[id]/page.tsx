@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { AddressCard } from "@/components/AddressCard";
 import { ActionButton } from "@/components/ActionButton";
 import { PhotoGallery } from "@/components/PhotoUploader";
+import { OrderDocuments } from "@/components/OrderDocuments";
 import { getI18n } from "@/i18n/server";
 import { L } from "@/i18n/labels";
 
@@ -18,7 +19,7 @@ export default async function OrderPage({ params, searchParams }: { params: { id
   if (searchParams.session_id) await confirmSession(searchParams.session_id);
   const order = await prisma.order.findFirst({
     where: { id: params.id, userId: user.id },
-    include: { items: true, photos: { orderBy: { createdAt: "asc" } }, events: { orderBy: { createdAt: "asc" } } },
+    include: { items: true, photos: { orderBy: { createdAt: "asc" } }, documents: { orderBy: { createdAt: "asc" } }, events: { orderBy: { createdAt: "asc" } } },
   });
   if (!order) notFound();
   const lines = order.lines as unknown as QuoteLine[];
@@ -43,7 +44,7 @@ export default async function OrderPage({ params, searchParams }: { params: { id
       )}
 
       {order.status !== "CANCELLED" && (
-        <ol className="mt-8 grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label={t("order.order_progress", "Order progress")}>
+        <ol className="mt-8 grid grid-cols-3 gap-2 sm:grid-cols-7" aria-label={t("order.order_progress", "Order progress")}>
           {FLOW.map((s, i) => (
             <li key={s} className="text-[12.5px]">
               <div className={`mb-1.5 h-1.5 rounded-full ${i <= stepIndex ? "bg-fox" : "bg-line"}`} />
@@ -73,6 +74,16 @@ export default async function OrderPage({ params, searchParams }: { params: { id
               <p className="mt-1 text-sm text-ink-2">{t("order.tracking_or_shipment_id", "Tracking or shipment ID")}</p>
               <p className="tnum mt-1 break-words text-lg font-bold">{order.outboundTracking}</p>
             </section>
+          )}
+
+          {order.paidAt && order.status !== "CANCELLED" && (
+            <OrderDocuments
+              orderId={order.id}
+              channel={order.channel}
+              status={order.status}
+              boxInfo={order.boxInfo}
+              docs={order.documents.map((d) => ({ id: d.id, kind: d.kind, name: d.name, url: d.url, size: d.size, fromAdmin: d.fromAdmin, createdAt: d.createdAt.toISOString() }))}
+            />
           )}
 
           <PhotoGallery photos={order.photos.map((p) => ({ id: p.id, url: p.url, kind: p.kind }))} />

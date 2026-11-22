@@ -5,10 +5,11 @@ import { getSession } from "@/lib/auth";
 import { notifyStatus } from "@/lib/notify";
 
 const Body = z.object({
-  status: z.enum(["AWAITING_PAYMENT", "AWAITING_INBOUND", "RECEIVED", "IN_PREP", "SHIPPED", "COMPLETED", "CANCELLED"]),
+  status: z.enum(["AWAITING_PAYMENT", "AWAITING_INBOUND", "RECEIVED", "IN_PREP", "AWAITING_LABELS", "SHIPPED", "COMPLETED", "CANCELLED"]),
   note: z.string().max(500).optional(),
   outboundTracking: z.string().max(500).optional(),
   adminNotes: z.string().max(5000).optional(),
+  boxInfo: z.string().max(5000).optional(),
   received: z.record(z.number().int().min(0)).optional(),
   notify: z.boolean().optional(),
 });
@@ -38,7 +39,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
     await tx.order.update({
       where: { id: order.id },
-      data: { status: b.status, outboundTracking: b.outboundTracking || null, adminNotes: b.adminNotes || null },
+      data: { status: b.status, outboundTracking: b.outboundTracking || null, adminNotes: b.adminNotes || null, boxInfo: b.boxInfo || null },
     });
     if (b.status !== order.status || b.note) await tx.orderEvent.create({ data: { orderId: order.id, status: b.status, note: b.note || null } });
   });

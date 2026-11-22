@@ -9,7 +9,7 @@ export function AdminOrderForm({
   order,
   items,
 }: {
-  order: { id: string; status: OrderStatus; outboundTracking: string; adminNotes: string };
+  order: { id: string; status: OrderStatus; outboundTracking: string; adminNotes: string; boxInfo: string };
   items: { id: string; title: string; sku: string | null; quantity: number; receivedQty: number | null }[];
 }) {
   const router = useRouter();
@@ -17,6 +17,7 @@ export function AdminOrderForm({
   const [note, setNote] = useState("");
   const [outboundTracking, setOut] = useState(order.outboundTracking);
   const [adminNotes, setAdminNotes] = useState(order.adminNotes);
+  const [boxInfo, setBoxInfo] = useState(order.boxInfo);
   const [received, setReceived] = useState<Record<string, string>>(Object.fromEntries(items.map((i) => [i.id, i.receivedQty?.toString() ?? ""])));
   const [notify, setNotify] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -37,6 +38,7 @@ export function AdminOrderForm({
             note,
             outboundTracking,
             adminNotes,
+            boxInfo,
             notify,
             received: Object.fromEntries(Object.entries(received).filter(([, v]) => v !== "").map(([k, v]) => [k, parseInt(v, 10)])),
           }),
@@ -74,6 +76,11 @@ export function AdminOrderForm({
           </ul>
         </fieldset>
       )}
+      <div>
+        <label className="label" htmlFor="bi">Box details for the customer&apos;s shipment plan</label>
+        <textarea id="bi" rows={4} className="field font-mono text-[13px]" placeholder={"3 boxes\nBox 1-2: 24x18x18 in, 32 lb\nBox 3: 18x18x18 in, 21 lb"} value={boxInfo} onChange={(e) => setBoxInfo(e.target.value)} />
+        <p className="mt-1 text-[12.5px] text-ink-soft">The customer sees this. Fill it in, then set status to &quot;Waiting for labels&quot;.</p>
+      </div>
       <div>
         <label className="label" htmlFor="ot">Outbound tracking / Amazon shipment ID</label>
         <input id="ot" className="field" value={outboundTracking} onChange={(e) => setOut(e.target.value)} />

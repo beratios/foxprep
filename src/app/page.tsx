@@ -57,6 +57,10 @@ export default async function Home() {
       a: t("faq.plan.a", "You create it in Seller Central (or we can do it with your permission) and upload the box and pallet labels to the order. Connect your Amazon store in the dashboard and we can see your SKUs, FNSKUs and stock."),
     },
     {
+      q: t("faq.labels.q", "Which labels do I need to send you?"),
+      a: t("faq.labels.a", "Unit labels: we print them from the FNSKU you add to each product. Box and carrier labels: when prep is done we post the box count, sizes and weights on your order, you create the shipment in Seller Central or Seller Center, and upload the label PDFs to the order. Each order page lists exactly what's needed."),
+    },
+    {
       q: t("faq.pallets.q", "Can you receive pallets?"),
       a: t("faq.pallets.a", "Yes, up to {max} standard 48×40 pallets per order, up to 1,000 kg each. For more, message us first so we can make room. Book the freight with liftgate delivery, because we don't have a loading dock. We don't unload full containers; send those to a cross-dock and have pallets delivered from there.", { max: MAX_PALLETS_PER_ORDER }),
     },

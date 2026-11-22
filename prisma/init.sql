@@ -24,3 +24,17 @@ CREATE INDEX "Ticket_status_lastMessageAt_idx" ON "Ticket"(status, "lastMessageA
 CREATE INDEX "Ticket_userId_lastMessageAt_idx" ON "Ticket"("userId", "lastMessageAt");
 CREATE TABLE "TicketMessage"(id text PRIMARY KEY, "ticketId" text NOT NULL REFERENCES "Ticket"(id) ON DELETE CASCADE, "fromAdmin" boolean NOT NULL DEFAULT false, author text NOT NULL, body text NOT NULL, photos text[] NOT NULL DEFAULT '{}', "createdAt" timestamp(3) NOT NULL DEFAULT now());
 CREATE INDEX "TicketMessage_ticketId_createdAt_idx" ON "TicketMessage"("ticketId", "createdAt");
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'AWAITING_LABELS' BEFORE 'SHIPPED';
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "boxInfo" TEXT;
+DO $$ BEGIN CREATE TYPE "DocKind" AS ENUM ('UNIT_LABELS','BOX_LABELS','CARRIER_LABELS','SHIPPING_LABELS','OTHER'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+CREATE TABLE IF NOT EXISTS "OrderDocument" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "orderId" TEXT NOT NULL REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "kind" "DocKind" NOT NULL,
+  "name" TEXT NOT NULL,
+  "url" TEXT NOT NULL,
+  "size" INTEGER NOT NULL DEFAULT 0,
+  "fromAdmin" BOOLEAN NOT NULL DEFAULT false,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "OrderDocument_orderId_idx" ON "OrderDocument"("orderId");

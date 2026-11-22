@@ -7,9 +7,10 @@ import { money, CHANNEL_LABEL, BASIS_LABEL, rateLabel, type QuoteLine } from "@/
 import { StatusBadge } from "@/components/StatusBadge";
 import { AdminOrderForm } from "@/components/AdminOrderForm";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { OrderDocuments } from "@/components/OrderDocuments";
 
 export default async function AdminOrder({ params }: { params: { id: string } }) {
-  const o = await prisma.order.findUnique({ where: { id: params.id }, include: { user: true, items: true, photos: { orderBy: { createdAt: "asc" } }, events: { orderBy: { createdAt: "desc" } } } });
+  const o = await prisma.order.findUnique({ where: { id: params.id }, include: { user: true, items: true, photos: { orderBy: { createdAt: "asc" } }, documents: { orderBy: { createdAt: "asc" } }, events: { orderBy: { createdAt: "desc" } } } });
   if (!o) notFound();
   const lines = o.lines as unknown as QuoteLine[];
   return (
@@ -54,6 +55,7 @@ export default async function AdminOrder({ params }: { params: { id: string } })
               </ul>
             </section>
           )}
+          <OrderDocuments admin orderId={o.id} channel={o.channel} status={o.status} boxInfo={null} docs={o.documents.map((d) => ({ id: d.id, kind: d.kind, name: d.name, url: d.url, size: d.size, fromAdmin: d.fromAdmin, createdAt: d.createdAt.toISOString() }))} />
           {o.customerNotes && (
             <section>
               <h2 className="mb-2 text-lg font-bold">Customer instructions</h2>
@@ -76,7 +78,7 @@ export default async function AdminOrder({ params }: { params: { id: string } })
         <aside className="space-y-6">
           <PhotoUploader orderId={o.id} photos={o.photos.map((p) => ({ id: p.id, url: p.url, kind: p.kind }))} />
           <AdminOrderForm
-            order={{ id: o.id, status: o.status, outboundTracking: o.outboundTracking ?? "", adminNotes: o.adminNotes ?? "" }}
+            order={{ id: o.id, status: o.status, outboundTracking: o.outboundTracking ?? "", adminNotes: o.adminNotes ?? "", boxInfo: o.boxInfo ?? "" }}
             items={o.items.map((i) => ({ id: i.id, title: i.title, sku: i.sku, quantity: i.quantity, receivedQty: i.receivedQty }))}
           />
         </aside>

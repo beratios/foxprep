@@ -23,6 +23,7 @@ enum OrderStatus {
   AWAITING_INBOUND
   RECEIVED
   IN_PREP
+  AWAITING_LABELS
   SHIPPED
   COMPLETED
   CANCELLED
@@ -103,12 +104,15 @@ model Order {
   outboundTracking String?
   customerNotes String?
   adminNotes    String?
+  /// Box count, sizes and weights we post so the customer can build the shipment plan
+  boxInfo       String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
   items  OrderItem[]
   events OrderEvent[]
   photos OrderPhoto[]
+  documents OrderDocument[]
   tickets Ticket[]
 
   @@index([userId, createdAt])
@@ -239,4 +243,27 @@ model Product {
   items OrderItem[]
 
   @@unique([userId, sku])
+}
+
+enum DocKind {
+  UNIT_LABELS
+  BOX_LABELS
+  CARRIER_LABELS
+  SHIPPING_LABELS
+  OTHER
+}
+
+/// Label PDFs and other files attached to an order, by the customer or by us
+model OrderDocument {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  kind      DocKind
+  name      String
+  url       String
+  size      Int      @default(0)
+  fromAdmin Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
 }
